@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Registrace — Sentinex{% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto bg-white rounded-lg shadow p-6">
+  <h1 class="text-xl font-semibold mb-4">Registrace</h1>
+  <form method="post" class="space-y-3">
+    {% csrf_token %}
+    {% for field in form %}
+      <div>
+        <label class="block text-sm text-gray-700 mb-1">{{ field.label }}</label>
+        {{ field }}
+        {% if field.errors %}<p class="text-red-600 text-sm">{{ field.errors|join:", " }}</p>{% endif %}
+      </div>
+    {% endfor %}
+    {% if form.non_field_errors %}
+      <p class="text-red-600 text-sm">{{ form.non_field_errors|join:", " }}</p>
+    {% endif %}
+    <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Registrovat</button>
+  </form>
+  <p class="mt-4 text-sm text-gray-600">
+    Máte účet? <a href="{% url 'account_login' %}" class="text-blue-600 hover:underline">Přihlášení</a>
+  </p>
+</div>
+{% endblock %}

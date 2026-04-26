@@ -1,0 +1,24 @@
+{% extends "app_shell.html" %}
+{% block title %}Weekly Brief{% endblock %}
+{% block content %}
+<div class="mb-6">
+  <h1 class="text-2xl font-semibold text-gray-900">Weekly Brief</h1>
+  <p class="text-gray-500 mt-1 text-sm">Aktuální brief.</p>
+</div>
+{% if report %}
+  <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <div class="flex items-center justify-between">
+      <div class="font-medium">{{ report.period_start }} — {{ report.period_end }}</div>
+      <div class="flex gap-3 text-sm">
+        <a href="{% url 'weekly_brief:detail' report.uuid %}" class="text-blue-600 hover:underline">Detail</a>
+        <a href="{% url 'weekly_brief:history' %}" class="text-blue-600 hover:underline">Historie</a>
+        <a href="{% url 'weekly_brief:pdf' report.uuid %}" class="text-blue-600 hover:underline">PDF</a>
+      </div>
+    </div>
+  </div>
+{% else %}
+  <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-sm text-gray-500">
+    Zatím žádný brief. Přejděte na <a href="{% url 'weekly_brief:history' %}" class="text-blue-600 hover:underline">historii</a>.
+  </div>
+{% endif %}
+{% endblock %}

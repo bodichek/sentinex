@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="bg-white rounded-lg shadow p-6 max-w-2xl">
+  <h1 class="text-xl font-semibold">Nastavení Weekly Brief</h1>
+  <form method="post" class="mt-6 space-y-4">
+    {% csrf_token %}
+    <div>
+      <label class="block text-sm">Příjemci (oddělené čárkou)</label>
+      <input name="recipients" value="{{ config.recipients }}" class="w-full border rounded px-3 py-2">
+    </div>
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="block text-sm">Den (0=Po..6=Ne)</label>
+        <input type="number" min="0" max="6" name="schedule_day" value="{{ config.schedule_day }}" class="w-full border rounded px-3 py-2">
+      </div>
+      <div>
+        <label class="block text-sm">Hodina</label>
+        <input type="number" min="0" max="23" name="schedule_hour" value="{{ config.schedule_hour }}" class="w-full border rounded px-3 py-2">
+      </div>
+    </div>
+    <div>
+      <label class="block text-sm">Timezone</label>
+      <input name="timezone" value="{{ config.timezone }}" class="w-full border rounded px-3 py-2">
+    </div>
+    <button class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Uložit</button>
+  </form>
+</div>
+{% endblock %}

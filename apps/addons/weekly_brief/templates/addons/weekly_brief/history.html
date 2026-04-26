@@ -1,0 +1,48 @@
+{% extends "app_shell.html" %}
+{% block title %}Weekly Brief — {{ request.tenant.name }}{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+  <div>
+    <h1 class="text-2xl font-semibold text-gray-900">Weekly Brief</h1>
+    <p class="text-gray-500 mt-1 text-sm">Historie vygenerovaných briefů.</p>
+  </div>
+  <form method="post" action="/api/addons/weekly_brief/trigger/" x-data="{ loading: false }" @submit="loading = true">
+    {% csrf_token %}
+    <button type="submit"
+            :disabled="loading"
+            class="px-4 py-2 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-60">
+      <span x-show="!loading">Vygenerovat brief</span>
+      <span x-show="loading" x-cloak>Generuji…</span>
+    </button>
+  </form>
+</div>
+
+<div class="bg-white rounded-lg shadow-sm border border-gray-200">
+  <ul class="divide-y divide-gray-200">
+    {% for r in reports %}
+      <li class="px-5 py-4 flex items-center justify-between">
+        <div>
+          <a href="{% url 'weekly_brief:detail' r.uuid %}"
+             class="font-medium text-blue-600 hover:underline">
+            {{ r.period_start }} — {{ r.period_end }}
+          </a>
+          <div class="text-xs text-gray-400 mt-0.5">
+            {% if r.generated_at %}Vygenerováno {{ r.generated_at|date:"j. n. Y H:i" }}{% else %}—{% endif %}
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">{{ r.get_status_display }}</span>
+          <a href="{% url 'weekly_brief:pdf' r.uuid %}"
+             class="text-xs px-2.5 py-1 rounded border border-gray-300 hover:bg-gray-50 text-gray-700">
+            PDF
+          </a>
+        </div>
+      </li>
+    {% empty %}
+      <li class="px-5 py-8 text-center text-sm text-gray-500">
+        Zatím žádné briefy. Klikněte na <em>Vygenerovat brief</em>.
+      </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

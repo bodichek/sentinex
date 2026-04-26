@@ -1,0 +1,28 @@
+{% extends "app_shell.html" %}
+{% block title %}Dashboard — {{ tenant.name }}{% endblock %}
+{% block content %}
+<div class="mb-6">
+  <h1 class="text-2xl font-semibold text-gray-900">Dashboard</h1>
+  <p class="text-gray-500 mt-1 text-sm">Vítejte zpět, {{ request.user.email }}.</p>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+  <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
+    <div class="text-xs uppercase tracking-wide text-gray-400">Tenant</div>
+    <div class="mt-2 text-lg font-semibold">{{ tenant.name }}</div>
+    <div class="text-xs text-gray-400 mt-1">{{ tenant.schema_name }}</div>
+  </div>
+  <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
+    <div class="text-xs uppercase tracking-wide text-gray-400">Vaše role</div>
+    <div class="mt-2 text-lg font-semibold">{{ membership.get_role_display }}</div>
+    <div class="text-xs text-gray-400 mt-1">Člen od {{ membership.created_at|date:"j. n. Y" }}</div>
+  </div>
+  <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
+    <div class="text-xs uppercase tracking-wide text-gray-400">Rychlé akce</div>
+    <ul class="mt-2 text-sm space-y-1">
+      <li><a href="{% url 'insights:index' %}" class="text-blue-600 hover:underline">Zobrazit Insights</a></li>
+      <li><a href="{% url 'weekly_brief:history' %}" class="text-blue-600 hover:underline">Weekly Brief</a></li>
+    </ul>
+  </div>
+</div>
+{% endblock %}

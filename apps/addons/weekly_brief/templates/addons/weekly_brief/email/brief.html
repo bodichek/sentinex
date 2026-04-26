@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Weekly Brief</title>
+<style>body{font-family:system-ui,Arial,sans-serif;color:#111;max-width:640px;margin:0 auto;padding:24px}h1{font-size:20px}h2{font-size:16px;margin-top:24px;border-bottom:1px solid #eee;padding-bottom:4px}.summary{white-space:pre-wrap}</style>
+</head><body>
+<h1>Weekly Brief · {{ period_start }} — {{ period_end }}</h1>
+<div class="summary">{{ summary }}</div>
+<h2>Klíčové metriky</h2>
+<pre>{{ sections.weekly_metrics }}</pre>
+<h2>Cashflow</h2>
+<pre>{{ sections.cashflow }}</pre>
+<h2>Anomálie</h2>
+<pre>{{ sections.anomalies }}</pre>
+<h2>Aktivita týmu</h2>
+<pre>{{ sections.team_activity }}</pre>
+<h2>Nadcházející závazky</h2>
+<pre>{{ sections.commitments }}</pre>
+</body></html>

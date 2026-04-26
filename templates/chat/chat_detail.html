@@ -1,0 +1,70 @@
+{% extends "app_shell.html" %}
+{% block title %}{{ conversation.title|default:"Chat" }}{% endblock %}
+{% block content %}
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
+
+<div class="mb-4 flex items-center justify-between">
+  <a href="{% url 'chat:list' %}" class="text-sm text-blue-600 hover:underline">← Zpět na konverzace</a>
+  <h1 class="text-lg font-semibold text-gray-900 truncate max-w-md">
+    {{ conversation.title|default:"Nový chat" }}
+  </h1>
+</div>
+
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col"
+     style="height: calc(100vh - 220px);"
+     x-data="chatRoom()" x-init="scrollToBottom()">
+  <div class="flex-1 overflow-y-auto px-5 py-4 space-y-4" x-ref="thread">
+    {% for m in chat_messages %}
+      {% if m.role == 'user' %}
+        <div class="flex justify-end">
+          <div class="max-w-[80%] bg-blue-600 text-white rounded-lg px-4 py-2 text-sm whitespace-pre-wrap">{{ m.content }}</div>
+        </div>
+      {% else %}
+        <div class="flex justify-start">
+          <div class="max-w-[80%] bg-gray-100 text-gray-900 rounded-lg px-4 py-2 text-sm prose prose-sm"
+               x-init="$el.innerHTML = (window.marked ? marked.parse($el.dataset.raw) : $el.dataset.raw)"
+               data-raw="{{ m.content }}">{{ m.content }}</div>
+        </div>
+      {% endif %}
+    {% empty %}
+      <div class="text-center text-sm text-gray-400 py-12">
+        Začněte konverzaci napsáním zprávy níže.
+      </div>
+    {% endfor %}
+  </div>
+
+  <form method="post" action="{% url 'chat:send_message' conversation.id %}"
+        class="border-t border-gray-200 p-3 flex gap-2"
+        @submit="submitting = true">
+    {% csrf_token %}
+    <textarea name="content" rows="2" required
+              :disabled="submitting"
+              placeholder="Napište zprávu… (Enter odešle, Shift+Enter = nový řádek)"
+              @keydown.enter.prevent="if (!$event.shiftKey) { $event.target.form.requestSubmit() } else { $event.target.value += '\n' }"
+              class="flex-1 resize-none rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"></textarea>
+    <button type="submit" :disabled="submitting"
+            class="px-4 py-2 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-60 flex items-center gap-2">
+      <svg x-show="submitting" x-cloak class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25"></circle>
+        <path d="M4 12a8 8 0 018-8" stroke="currentColor" stroke-width="4" class="opacity-75"></path>
+      </svg>
+      <span x-show="!submitting">Odeslat</span>
+      <span x-show="submitting" x-cloak>Posílám…</span>
+    </button>
+  </form>
+</div>
+
+<script>
+  function chatRoom() {
+    return {
+      submitting: false,
+      scrollToBottom() {
+        this.$nextTick(() => {
+          const t = this.$refs.thread;
+          if (t) t.scrollTop = t.scrollHeight;
+        });
+      },
+    };
+  }
+</script>
+{% endblock %}

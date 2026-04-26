@@ -1,0 +1,18 @@
+Weekly Brief · {{ period_start }} — {{ period_end }}
+
+{{ summary }}
+
+--- KLÍČOVÉ METRIKY ---
+{{ sections.weekly_metrics }}
+
+--- CASHFLOW ---
+{{ sections.cashflow }}
+
+--- ANOMÁLIE ---
+{{ sections.anomalies }}
+
+--- AKTIVITA TÝMU ---
+{{ sections.team_activity }}
+
+--- ZÁVAZKY ---
+{{ sections.commitments }}

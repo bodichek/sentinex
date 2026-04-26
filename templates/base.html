@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Sentinex{% endblock %}</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+</head>
+<body class="bg-gray-50 text-gray-900 min-h-screen">
+{% block body %}
+  <nav class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
+    <a href="/" class="font-semibold text-lg">Sentinex</a>
+    <div class="flex items-center gap-4 text-sm">
+      {% if user.is_authenticated %}
+        <span class="text-gray-600">{{ user.email }}</span>
+        <a href="{% url 'account_logout' %}" class="text-blue-600 hover:underline">Odhlásit</a>
+      {% else %}
+        <a href="{% url 'account_login' %}" class="text-blue-600 hover:underline">Přihlásit</a>
+        <a href="{% url 'account_signup' %}" class="text-blue-600 hover:underline">Registrovat</a>
+      {% endif %}
+    </div>
+  </nav>
+  <main class="max-w-3xl mx-auto p-6">
+    {% if messages %}
+      {% for m in messages %}
+        <div class="mb-4 p-3 rounded bg-blue-50 text-blue-900 text-sm">{{ m }}</div>
+      {% endfor %}
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+{% endblock %}
+</body>
+</html>

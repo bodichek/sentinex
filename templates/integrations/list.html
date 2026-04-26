@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Integrace — Sentinex{% endblock %}
+{% block content %}
+<div class="bg-white rounded-lg shadow p-6">
+  <h1 class="text-xl font-semibold">Integrace</h1>
+  <p class="text-sm text-gray-600 mt-1">Připojené systémy, ze kterých Sentinex čerpá data.</p>
+  <ul class="mt-6 divide-y">
+    {% for i in integrations %}
+      <li class="py-3 flex items-center justify-between">
+        <div>
+          <div class="font-medium">{{ i.get_provider_display }}</div>
+          <div class="text-sm {% if i.is_active %}text-green-700{% else %}text-gray-500{% endif %}">
+            {% if i.is_active %}Aktivní{% else %}Neaktivní{% endif %}
+            {% if i.connected_at %} — připojeno {{ i.connected_at|date:"j. n. Y" }}{% endif %}
+          </div>
+        </div>
+        {% if i.is_active %}
+          <form method="post" action="{% url 'disconnect_integration' i.provider %}">
+            {% csrf_token %}
+            <button class="text-red-600 text-sm hover:underline">Odpojit</button>
+          </form>
+        {% endif %}
+      </li>
+    {% empty %}
+      <li class="py-3 text-gray-500">Zatím žádné integrace.</li>
+    {% endfor %}
+  </ul>
+  <form method="post" action="{% url 'connect_google_workspace' %}" class="mt-6">
+    {% csrf_token %}
+    <button class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+      Připojit Google Workspace
+    </button>
+  </form>
+</div>
+{% endblock %}
