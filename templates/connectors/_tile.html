@@ -1,0 +1,69 @@
+{% comment %}
+One connector tile in the integrations grid.
+
+Required:
+  provider           "slack" (used both as icon name and to look up status)
+  provider_name      "Slack"
+  provider_subtitle  short description
+  connect_url        URL name (no namespace = global)
+  connect_method     "post" or "get"
+  badges             space-separated label string e.g. "OAuth 2.0 · Bot token"
+
+Looks up integration status from ``integrations`` (queryset of Integration).
+{% endcomment %}
+
+{# find this provider's row, if any, in ``integrations`` #}
+{% with active_row=None %}
+  {% for i in integrations %}{% if i.provider == provider %}{% with active_row=i %}{% endwith %}{% endif %}{% endfor %}
+{% endwith %}
+
+<div class="sx-tile">
+  <div class="flex items-start gap-3">
+    <div class="sx-tile-icon">
+      {% include "connectors/_icons.html" with icon=provider %}
+    </div>
+    <div class="flex-1 min-w-0">
+      <div class="flex items-center gap-2 flex-wrap">
+        <div class="font-medium truncate">{{ provider_name }}</div>
+        {% with row=None %}
+          {% for i in integrations %}{% if i.provider == provider %}
+            {% if i.is_active %}
+              <span class="sx-pill sx-pill-on">●&nbsp;Aktivní</span>
+            {% else %}
+              <span class="sx-pill sx-pill-warn">○&nbsp;Nastavené, vypnuté</span>
+            {% endif %}
+          {% endif %}{% endfor %}
+        {% endwith %}
+      </div>
+      <div class="sx-muted text-xs mt-1 line-clamp-2">{{ provider_subtitle }}</div>
+      {% if badges %}<div class="sx-mono text-[10px] sx-mute mt-1.5 uppercase tracking-widest">{{ badges }}</div>{% endif %}
+    </div>
+  </div>
+
+  <div class="flex flex-wrap items-center gap-2 mt-auto pt-3 border-t border-white/5">
+    {% if connect_method == "post" %}
+      <form method="post" action="{% url connect_url %}">
+        {% csrf_token %}
+        <button class="sx-btn sx-btn-primary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 1 0-7.07-7.07l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 1 0 7.07 7.07l1.5-1.5"/></svg>
+          Připojit
+        </button>
+      </form>
+    {% else %}
+      <a href="{% url connect_url %}" class="sx-btn sx-btn-primary">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 1 0-7.07-7.07l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 1 0 7.07 7.07l1.5-1.5"/></svg>
+        Nastavit
+      </a>
+    {% endif %}
+
+    {% for i in integrations %}{% if i.provider == provider and i.is_active %}
+      <form method="post" action="{% url 'disconnect_integration' i.provider %}">
+        {% csrf_token %}
+        <button class="sx-btn sx-btn-danger">Odpojit</button>
+      </form>
+      {% if i.last_sync_at %}
+        <span class="text-xs sx-mute ml-auto sx-mono">sync {{ i.last_sync_at|date:"j.n. H:i" }}</span>
+      {% endif %}
+    {% endif %}{% endfor %}
+  </div>
+</div>

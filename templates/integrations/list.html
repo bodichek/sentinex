@@ -1,90 +1,55 @@
-{% extends "base.html" %}
-{% block title %}Integrace — Sentinex{% endblock %}
+{% extends "app_shell.html" %}
+{% block title %}Konektory — Sentinex{% endblock %}
 {% block content %}
-<div class="bg-white rounded-lg shadow p-6">
-  <h1 class="text-xl font-semibold">Integrace</h1>
-  <p class="text-sm text-gray-600 mt-1">Připojené systémy, ze kterých Sentinex čerpá data.</p>
+{% with active=integrations %}
 
-  <ul class="mt-6 divide-y">
-    {% for i in integrations %}
-      <li class="py-3 flex items-center justify-between">
-        <div>
-          <div class="font-medium">{{ i.get_provider_display }}</div>
-          <div class="text-sm {% if i.is_active %}text-green-700{% else %}text-gray-500{% endif %}">
-            {% if i.is_active %}Aktivní{% else %}Neaktivní{% endif %}
-            {% if i.connected_at %} — připojeno {{ i.connected_at|date:"j. n. Y" }}{% endif %}
-            {% if i.last_sync_at %} · poslední sync {{ i.last_sync_at|date:"j. n. Y H:i" }}{% endif %}
-          </div>
-        </div>
-        {% if i.is_active %}
-          <form method="post" action="{% url 'disconnect_integration' i.provider %}">
-            {% csrf_token %}
-            <button class="text-red-600 text-sm hover:underline">Odpojit</button>
-          </form>
-        {% endif %}
-      </li>
-    {% empty %}
-      <li class="py-3 text-gray-500">Zatím žádné integrace.</li>
-    {% endfor %}
-  </ul>
-
-  <h2 class="mt-8 text-lg font-semibold">Připojit konektor</h2>
-  <div class="mt-4 grid gap-3 sm:grid-cols-2">
-
-    <form method="post" action="{% url 'connect_google_workspace' %}">
-      {% csrf_token %}
-      <button class="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-        Google Workspace (per-user OAuth)
-      </button>
-    </form>
-
-    <a href="{% url 'workspace_dwd_setup' %}"
-       class="block text-center bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
-      Google Workspace (Domain-Wide Delegation)
-    </a>
-
-    <form method="post" action="{% url 'connectors_slack:connect' %}">
-      {% csrf_token %}
-      <button class="w-full bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700">
-        Slack (OAuth v2)
-      </button>
-    </form>
-
-    <a href="{% url 'connectors_smartemailing:setup' %}"
-       class="block text-center bg-rose-600 text-white px-4 py-2 rounded hover:bg-rose-700">
-      SmartEmailing
-    </a>
-
-    <form method="post" action="{% url 'connectors_pipedrive:connect' %}">
-      {% csrf_token %}
-      <button class="w-full bg-emerald-600 text-white px-4 py-2 rounded hover:bg-emerald-700">
-        Pipedrive (OAuth 2.0)
-      </button>
-    </form>
-
-    <form method="post" action="{% url 'connectors_canva:connect' %}">
-      {% csrf_token %}
-      <button class="w-full bg-cyan-600 text-white px-4 py-2 rounded hover:bg-cyan-700">
-        Canva (MCP, OAuth 2.1 + PKCE)
-      </button>
-    </form>
-
-    <a href="{% url 'connectors_trello:setup' %}"
-       class="block text-center bg-sky-600 text-white px-4 py-2 rounded hover:bg-sky-700">
-      Trello
-    </a>
+<div class="mb-6 flex items-end justify-between">
+  <div>
+    <div class="text-[11px] uppercase tracking-widest sx-mute sx-mono">Data layer</div>
+    <h1 class="sx-h1 mt-1">Konektory</h1>
+    <p class="sx-muted text-sm mt-2 max-w-2xl">
+      Sentinex čte data ze systémů, které tu propojíš. Údaje se ukládají
+      <em>šifrované</em> v databázi a jsou vždy vázané na konkrétního tenanta.
+      Nic se nezapisuje do <span class="sx-code">.env</span>.
+    </p>
   </div>
+  <a href="{% url 'knowledge_search' %}" class="sx-btn">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-4.3-4.3"/></svg>
+    Hledat ve znalostech
+  </a>
+</div>
 
-  <h2 class="mt-8 text-lg font-semibold">Knowledge</h2>
-  <div class="mt-4 flex flex-wrap gap-3">
-    <a href="{% url 'workspace_dwd_dashboard' %}"
-       class="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300">
-      Knowledge dashboard
-    </a>
-    <a href="{% url 'knowledge_search' %}"
-       class="bg-emerald-600 text-white px-4 py-2 rounded hover:bg-emerald-700">
+{# Build a lookup of active providers so tiles can render status pills #}
+{% regroup integrations by provider as provider_status %}
+
+<section class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+
+  {% include "connectors/_tile.html" with provider="google_workspace" provider_name="Google Workspace" provider_subtitle="Per-user OAuth — Gmail, Drive, Calendar pro jednoho uživatele" connect_url="connect_google_workspace" connect_method="post" badges="OAuth 2.0" %}
+
+  {% include "connectors/_tile.html" with provider="google_workspace_dwd" provider_name="Google Workspace · DWD" provider_subtitle="Domain-Wide Delegation — read přístup k celé Workspace doméně" connect_url="workspace_dwd_setup" connect_method="get" badges="Service Account · Admin SDK" %}
+
+  {% include "connectors/_tile.html" with provider="slack" provider_name="Slack" provider_subtitle="Channels, messages, users, reactions" connect_url="connectors_slack:connect" connect_method="post" badges="OAuth v2" %}
+
+  {% include "connectors/_tile.html" with provider="smartemailing" provider_name="SmartEmailing" provider_subtitle="E-mail marketing — kampaně, kontakty, statistiky" connect_url="connectors_smartemailing:setup" connect_method="get" badges="Basic Auth" %}
+
+  {% include "connectors/_tile.html" with provider="pipedrive" provider_name="Pipedrive" provider_subtitle="Pipeline, deals, persons, activities" connect_url="connectors_pipedrive:connect" connect_method="post" badges="OAuth 2.0" %}
+
+  {% include "connectors/_tile.html" with provider="canva" provider_name="Canva" provider_subtitle="Designs, brand templates, folders přes oficiální MCP" connect_url="connectors_canva:connect" connect_method="post" badges="MCP · OAuth 2.1 + PKCE" %}
+
+  {% include "connectors/_tile.html" with provider="trello" provider_name="Trello" provider_subtitle="Boards, cards, lists, actions" connect_url="connectors_trello:setup" connect_method="get" badges="API key + token" %}
+
+</section>
+
+<section class="mt-10">
+  <div class="text-[11px] uppercase tracking-widest sx-mute sx-mono mb-3">Knowledge ingestion</div>
+  <div class="flex flex-wrap gap-3">
+    <a href="{% url 'workspace_dwd_dashboard' %}" class="sx-btn">Knowledge dashboard</a>
+    <a href="{% url 'knowledge_search' %}" class="sx-btn sx-btn-primary">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-4.3-4.3"/></svg>
       Hledat ve znalostech
     </a>
   </div>
-</div>
+</section>
+
+{% endwith %}
 {% endblock %}

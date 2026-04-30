@@ -1,31 +1,194 @@
 <!DOCTYPE html>
-<html lang="cs">
+<html lang="cs" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Sentinex{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   <script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+  <style>
+    :root {
+      --sx-bg-0: #07070f;
+      --sx-bg-1: #0c0d1c;
+      --sx-bg-2: #131428;
+      --sx-panel: rgba(255, 255, 255, 0.04);
+      --sx-panel-strong: rgba(255, 255, 255, 0.08);
+      --sx-border: rgba(148, 163, 184, 0.14);
+      --sx-border-strong: rgba(148, 163, 184, 0.28);
+      --sx-text: #e6e8ee;
+      --sx-text-dim: #94a3b8;
+      --sx-text-mute: #64748b;
+      --sx-accent: #00e5ff;       /* cyan */
+      --sx-accent-2: #a78bfa;     /* violet */
+      --sx-accent-3: #34d399;     /* emerald */
+      --sx-danger: #f87171;
+      --sx-success: #4ade80;
+      --sx-warning: #fbbf24;
+    }
+    html, body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+    body {
+      background: radial-gradient(1200px 600px at 10% -10%, rgba(0, 229, 255, 0.10), transparent 60%),
+                  radial-gradient(900px 500px at 110% 10%, rgba(167, 139, 250, 0.10), transparent 60%),
+                  linear-gradient(180deg, var(--sx-bg-0) 0%, var(--sx-bg-1) 100%);
+      color: var(--sx-text);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+    .sx-mono { font-family: 'JetBrains Mono', ui-monospace, monospace; letter-spacing: 0.01em; }
+
+    /* Glass panels */
+    .sx-glass {
+      background: var(--sx-panel);
+      border: 1px solid var(--sx-border);
+      backdrop-filter: blur(14px) saturate(140%);
+      -webkit-backdrop-filter: blur(14px) saturate(140%);
+      border-radius: 14px;
+    }
+    .sx-glass-strong {
+      background: var(--sx-panel-strong);
+      border: 1px solid var(--sx-border-strong);
+      backdrop-filter: blur(20px) saturate(160%);
+      -webkit-backdrop-filter: blur(20px) saturate(160%);
+      border-radius: 16px;
+    }
+
+    /* Headings — neon accent on H1 */
+    h1.sx-h1 {
+      font-size: 1.75rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #ffffff 0%, var(--sx-accent) 60%, var(--sx-accent-2) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    /* Buttons */
+    .sx-btn {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      padding: 0.55rem 1rem; font-size: 0.875rem; font-weight: 500;
+      border-radius: 10px; border: 1px solid var(--sx-border);
+      background: rgba(255,255,255,0.03);
+      color: var(--sx-text); transition: all 0.15s ease;
+      cursor: pointer;
+    }
+    .sx-btn:hover { border-color: var(--sx-border-strong); background: rgba(255,255,255,0.06); }
+    .sx-btn-primary {
+      border-color: rgba(0, 229, 255, 0.45);
+      background: linear-gradient(135deg, rgba(0, 229, 255, 0.18), rgba(167, 139, 250, 0.18));
+      color: #ffffff;
+      box-shadow: 0 0 0 1px rgba(0, 229, 255, 0.10), 0 8px 24px -10px rgba(0, 229, 255, 0.40);
+    }
+    .sx-btn-primary:hover {
+      border-color: rgba(0, 229, 255, 0.85);
+      box-shadow: 0 0 0 1px rgba(0, 229, 255, 0.25), 0 12px 32px -8px rgba(0, 229, 255, 0.55);
+    }
+    .sx-btn-ghost { background: transparent; }
+    .sx-btn-danger { border-color: rgba(248, 113, 113, 0.4); color: #fecaca; }
+    .sx-btn-danger:hover { background: rgba(248, 113, 113, 0.10); }
+
+    /* Inputs */
+    .sx-input {
+      width: 100%;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--sx-border);
+      border-radius: 10px;
+      padding: 0.6rem 0.85rem;
+      color: var(--sx-text);
+      font-size: 0.9rem;
+      transition: all 0.15s ease;
+    }
+    .sx-input::placeholder { color: var(--sx-text-mute); }
+    .sx-input:focus {
+      outline: none;
+      border-color: rgba(0, 229, 255, 0.55);
+      box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.12);
+      background: rgba(255,255,255,0.05);
+    }
+
+    /* Status pills */
+    .sx-pill { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.2rem 0.6rem; font-size: 0.72rem; font-weight: 500; border-radius: 999px; border: 1px solid var(--sx-border); }
+    .sx-pill-on { color: var(--sx-success); border-color: rgba(74, 222, 128, 0.35); background: rgba(74, 222, 128, 0.08); }
+    .sx-pill-off { color: var(--sx-text-mute); }
+    .sx-pill-warn { color: var(--sx-warning); border-color: rgba(251, 191, 36, 0.35); background: rgba(251, 191, 36, 0.08); }
+
+    /* Connector tile (icon grid) */
+    .sx-tile {
+      display: flex; flex-direction: column; gap: 0.75rem;
+      padding: 1.25rem;
+      background: var(--sx-panel);
+      border: 1px solid var(--sx-border);
+      border-radius: 14px;
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .sx-tile::before {
+      content: ""; position: absolute; inset: 0;
+      background: linear-gradient(135deg, transparent 60%, rgba(0, 229, 255, 0.05));
+      opacity: 0; transition: opacity 0.2s ease;
+      pointer-events: none;
+    }
+    .sx-tile:hover { border-color: var(--sx-border-strong); transform: translateY(-1px); }
+    .sx-tile:hover::before { opacity: 1; }
+    .sx-tile-icon {
+      width: 48px; height: 48px; border-radius: 12px;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--sx-border);
+    }
+
+    /* Wizard step indicator */
+    .sx-step { display: flex; align-items: center; gap: 0.5rem; font-size: 0.78rem; color: var(--sx-text-mute); }
+    .sx-step-dot { width: 22px; height: 22px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--sx-border); background: rgba(255,255,255,0.03); font-size: 0.72rem; }
+    .sx-step.active .sx-step-dot { border-color: var(--sx-accent); color: var(--sx-accent); box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.10); }
+    .sx-step.done .sx-step-dot { border-color: var(--sx-success); color: var(--sx-success); }
+    .sx-step.active { color: var(--sx-text); }
+
+    /* Sidebar */
+    .sx-side-link { display: flex; align-items: center; gap: 0.65rem; padding: 0.55rem 0.75rem; border-radius: 10px; color: var(--sx-text-dim); font-size: 0.875rem; }
+    .sx-side-link:hover { background: rgba(255,255,255,0.04); color: var(--sx-text); }
+    .sx-side-link.active { background: linear-gradient(135deg, rgba(0,229,255,0.10), rgba(167,139,250,0.10)); color: var(--sx-text); border: 1px solid rgba(0,229,255,0.20); }
+
+    /* Misc */
+    [x-cloak] { display: none !important; }
+    .sx-muted { color: var(--sx-text-dim); }
+    .sx-mute  { color: var(--sx-text-mute); }
+    .sx-divider { height: 1px; background: var(--sx-border); }
+    a.sx-link { color: var(--sx-accent); text-decoration: none; }
+    a.sx-link:hover { text-decoration: underline; }
+    .sx-code { background: rgba(255,255,255,0.05); border: 1px solid var(--sx-border); padding: 0.1rem 0.45rem; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; }
+
+    /* Animations */
+    @keyframes sx-pulse-ring { 0% { box-shadow: 0 0 0 0 rgba(0, 229, 255, 0.5); } 80%, 100% { box-shadow: 0 0 0 12px rgba(0, 229, 255, 0); } }
+    .sx-pulse { animation: sx-pulse-ring 1.6s infinite; }
+  </style>
 </head>
-<body class="bg-gray-50 text-gray-900 min-h-screen">
+<body>
 {% block body %}
-  <nav class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
-    <a href="/" class="font-semibold text-lg">Sentinex</a>
-    <div class="flex items-center gap-4 text-sm">
+  <nav class="sx-glass mx-4 mt-4 px-6 py-3 flex items-center justify-between">
+    <a href="/" class="font-semibold tracking-tight text-lg flex items-center gap-2">
+      <span class="inline-block w-2.5 h-2.5 rounded-full bg-cyan-400 sx-pulse"></span>
+      <span>Sentinex</span>
+    </a>
+    <div class="flex items-center gap-4 text-sm sx-muted">
       {% if user.is_authenticated %}
-        <span class="text-gray-600">{{ user.email }}</span>
-        <a href="{% url 'account_logout' %}" class="text-blue-600 hover:underline">Odhlásit</a>
+        <span>{{ user.email }}</span>
+        <a href="{% url 'account_logout' %}" class="sx-link">Odhlásit</a>
       {% else %}
-        <a href="{% url 'account_login' %}" class="text-blue-600 hover:underline">Přihlásit</a>
-        <a href="{% url 'account_signup' %}" class="text-blue-600 hover:underline">Registrovat</a>
+        <a href="{% url 'account_login' %}" class="sx-link">Přihlásit</a>
+        <a href="{% url 'account_signup' %}" class="sx-link">Registrovat</a>
       {% endif %}
     </div>
   </nav>
   <main class="max-w-3xl mx-auto p-6">
     {% if messages %}
       {% for m in messages %}
-        <div class="mb-4 p-3 rounded bg-blue-50 text-blue-900 text-sm">{{ m }}</div>
+        <div class="mb-4 p-3 rounded-lg sx-glass text-sm">{{ m }}</div>
       {% endfor %}
     {% endif %}
     {% block content %}{% endblock %}
