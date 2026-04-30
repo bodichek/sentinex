@@ -63,6 +63,19 @@ Per-tenant roles:
 - `@permission_required` decorators on view functions
 - Permissions also checked in services (defense in depth)
 
+### Decorator: `require_admin`
+
+Defined in `apps/core/middleware.py`. Restricts a view to tenant members
+with role **Owner** or **Admin** — anyone else gets HTTP 403. Applied to
+destructive or high-cost actions:
+
+- `disconnect(provider)` — toggling an integration off
+- `workspace_dwd_ingest` — triggering a full / incremental Workspace
+  re-ingest (large embedding spend + Google API quota)
+
+Stack with `@login_required` and `@require_membership` first; `@require_admin`
+must run after the membership has been attached to the request.
+
 ## Data Isolation
 
 ### Tenant Isolation
@@ -95,6 +108,17 @@ Every addon has explicit tenant isolation tests. See [TESTING.md](TESTING.md).
 
 MVP: environment variables in `.env` on server.
 Production roadmap: migrate to dedicated secrets manager (Doppler, AWS Secrets Manager, HashiCorp Vault).
+
+### `CRYPTOGRAPHY_KEY` hardening
+
+`apps/data_access/models._fernet()` enforces:
+
+- Length **≥ 32 characters**. Shorter keys raise `RuntimeError` at first use.
+- Boot **fails** outside `DEBUG` if `CRYPTOGRAPHY_KEY` still equals the
+  insecure default `insecure-dev-cryptography-key-change`.
+- Generate with `python -c "import secrets; print(secrets.token_urlsafe(48))"`.
+- Rotation requires re-encrypting every `Credential.encrypted_tokens` row;
+  there is no automatic key-rotation flow yet — see Rotation Playbook below.
 
 ## Secrets Management
 

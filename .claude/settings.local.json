@@ -51,7 +51,12 @@
       "Bash(python -c \"import secrets; print\\(secrets.token_urlsafe\\(64\\)\\)\")",
       "Bash(DJANGO_SETTINGS_MODULE=config.settings.production SECRET_KEY=$\\(python -c \"import secrets; print\\(secrets.token_urlsafe\\(64\\)\\)\"\\) DATABASE_URL=postgres://x:y@localhost:5432/z REDIS_URL=redis://localhost:6379/0 ALLOWED_HOSTS=.sentinex.io,sentinex.io poetry run python manage.py check --deploy)",
       "Bash(DJANGO_SETTINGS_MODULE=config.settings.production SECRET_KEY=k DATABASE_URL=postgres://x:y@localhost:5432/z REDIS_URL=redis://localhost:6379/0 poetry run python -c \"from django.conf import settings; print\\(settings.ALLOWED_HOSTS\\)\")",
-      "Bash(DJANGO_SETTINGS_MODULE=config.settings.production SECRET_KEY=$\\(python -c \"import secrets; print\\(secrets.token_urlsafe\\(64\\)\\)\"\\) DATABASE_URL=postgres://x:y@localhost:5432/z REDIS_URL=redis://localhost:6379/0 poetry run python manage.py check --deploy)"
+      "Bash(DJANGO_SETTINGS_MODULE=config.settings.production SECRET_KEY=$\\(python -c \"import secrets; print\\(secrets.token_urlsafe\\(64\\)\\)\"\\) DATABASE_URL=postgres://x:y@localhost:5432/z REDIS_URL=redis://localhost:6379/0 poetry run python manage.py check --deploy)",
+      "Bash(docker version *)",
+      "Bash(docker context ls *)",
+      "Bash(xargs grep *)",
+      "Skill(code-review:code-review)",
+      "Bash(git add *)"
     ]
   }
 }

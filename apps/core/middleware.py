@@ -11,7 +11,7 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect
 from django.urls import resolve
 
-from apps.core.models import TenantMembership
+from apps.core.models import Role, TenantMembership
 
 PUBLIC_VIEW_NAMESPACES = {"account", "admin", "socialaccount"}
 PUBLIC_PATH_PREFIXES = (
@@ -74,6 +74,25 @@ def require_membership(view_func: Callable[..., HttpResponse]) -> Callable[..., 
         membership = getattr(request, "tenant_membership", None)
         if membership is None:
             return redirect("no_membership")
+        return view_func(request, *args, **kwargs)
+
+    return wrapper
+
+
+_ADMIN_ROLES = {Role.OWNER, Role.ADMIN}
+
+
+def require_admin(view_func: Callable[..., HttpResponse]) -> Callable[..., HttpResponse]:
+    """View decorator: only Owner/Admin tenant members allowed.
+
+    Used to gate destructive or high-cost actions (re-ingest, disconnect)
+    so any seat holder cannot trigger them.
+    """
+
+    def wrapper(request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        membership = getattr(request, "tenant_membership", None)
+        if membership is None or membership.role not in _ADMIN_ROLES:
+            return HttpResponse(status=403)
         return view_func(request, *args, **kwargs)
 
     return wrapper

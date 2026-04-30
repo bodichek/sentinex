@@ -112,6 +112,9 @@ ALLOWED_AGENT_ACTIONS = {
     "orchestrator": {"classify", "compose"},
     "strategic": {"analyze"},
     "finance": {"analyze"},
+    "people": {"analyze"},
+    "ops": {"analyze"},
+    "knowledge": {"analyze"},
 }
 
 

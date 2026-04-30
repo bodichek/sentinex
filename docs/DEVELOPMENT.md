@@ -236,6 +236,36 @@ poetry run python manage.py list_addons
 poetry run python manage.py activate_addon --tenant demo --addon weekly_brief
 ```
 
+### Workspace knowledge index (RAG)
+
+The DWD connector + ingestion pipeline can run end-to-end **without any
+Google credentials** in stub mode — useful for working on extractors,
+chunker, search SQL, or the Knowledge specialist offline.
+
+```bash
+# .env — turn on stub embeddings (or just leave OPENAI_API_KEY empty)
+KNOWLEDGE_STUB_MODE=True
+
+# Trigger ingestion (will fail at the Drive call — that's expected unless
+# you also set GOOGLE_WORKSPACE_* envs and have DWD authorised)
+poetry run python manage.py workspace_ingest --tenant=public --mode=full
+
+# Once you do have data, smoke-test the search:
+poetry run python manage.py knowledge_search --tenant=public --query="cenotvorba"
+```
+
+For the full Workspace setup (Service Account, DWD authorisation, scopes)
+see `docs/GOOGLE_WORKSPACE_DWD.md`.
+
+Local-only knowledge tests don't need any of the above:
+```bash
+poetry run pytest apps/data_access/tests/test_knowledge_chunker.py
+poetry run pytest apps/data_access/tests/test_knowledge_embedder.py    # stub mode
+poetry run pytest apps/data_access/tests/test_knowledge_extractors.py
+poetry run pytest apps/data_access/tests/test_knowledge_dwd.py         # mocked
+poetry run pytest apps/data_access/tests/test_knowledge_specialist.py  # mocked LLM
+```
+
 ## Code Style
 
 ### Python

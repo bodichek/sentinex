@@ -59,6 +59,18 @@ Domain-specific agents with focused expertise.
 - Tools: Customer-related Insight Functions, CRM-synced data
 - Model: Claude Sonnet
 
+**Knowledge Specialist** (RAG over Workspace)
+- Domain: questions answerable from indexed company documents
+  (Drive / Gmail / Calendar via Domain-Wide Delegation).
+- Tools: `search_company_knowledge` Insight Function (top-K chunks from
+  the pgvector knowledge index).
+- Model: Claude Sonnet (temperature 0.2 — grounded, low creativity)
+- Behavior: every claim must be backed by a numbered citation that maps
+  to one of the retrieved chunks; "I don't know" if context is insufficient.
+- Implementation: `apps/agents/specialists/knowledge.py`
+- Prompt: `apps/agents/prompts/knowledge_specialist.yaml`
+- See `docs/GOOGLE_WORKSPACE_DWD.md` for the full ingestion / setup flow.
+
 **Addon Specialists**
 - Addons can register their own specialists
 - Addon specialists follow the same interface as core specialists
@@ -105,6 +117,31 @@ Mandatory pre-call and post-call checks.
 4. Hallucination detection: for factual claims, verify against data source
 
 Implementation lives in `apps/agents/guardrails.py`. Every agent invocation wraps through guardrails. Bypassing requires explicit comment explaining why.
+
+`ALLOWED_AGENT_ACTIONS` is the scope-check whitelist:
+
+```python
+ALLOWED_AGENT_ACTIONS = {
+    "orchestrator": {"classify", "compose"},
+    "strategic":    {"analyze"},
+    "finance":      {"analyze"},
+    "people":       {"analyze"},
+    "ops":          {"analyze"},
+    "knowledge":    {"analyze"},
+}
+```
+
+Adding a new specialist requires adding its name + permitted actions here
+or `check_scope` will reject every call.
+
+#### PII masking on RAG context
+
+The orchestrator masks the **user query** before fan-out, but specialists
+that retrieve data and inject it into a prompt must mask the **retrieved
+content** themselves. `KnowledgeSpecialist` does this: every chunk pulled
+from the pgvector index passes through `mask_pii()` before becoming part
+of the user prompt. Future RAG-style specialists must follow the same
+pattern.
 
 ### Context Builder
 

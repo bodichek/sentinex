@@ -19,6 +19,10 @@
          class="block px-3 py-2 rounded-md {% if request.resolver_match.namespace == 'chat' %}bg-blue-50 text-blue-700 font-medium{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
         Chat
       </a>
+      <a href="{% url 'knowledge_search' %}"
+         class="block px-3 py-2 rounded-md {% if url_name == 'knowledge_search' %}bg-blue-50 text-blue-700 font-medium{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
+        Znalosti
+      </a>
       <a href="{% url 'weekly_brief:history' %}"
          class="block px-3 py-2 rounded-md {% if request.resolver_match.namespace == 'weekly_brief' %}bg-blue-50 text-blue-700 font-medium{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
         Weekly Brief

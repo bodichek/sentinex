@@ -6,7 +6,15 @@ from typing import Any
 
 from django.contrib import admin
 
-from apps.data_access.models import Credential, DataSnapshot, Integration, ManualKPI, MCPCall
+from apps.data_access.models import (
+    Credential,
+    DataSnapshot,
+    IngestionCursor,
+    Integration,
+    ManualKPI,
+    MCPCall,
+    WorkspaceDocument,
+)
 
 
 @admin.register(Integration)
@@ -53,3 +61,43 @@ class ManualKPIAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
     list_display = ("name", "value", "unit", "period_end", "created_at")
     list_filter = ("name", "unit")
     search_fields = ("name", "notes")
+
+
+@admin.register(WorkspaceDocument)
+class WorkspaceDocumentAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
+    list_display = (
+        "title",
+        "source",
+        "mime_type",
+        "owner_email",
+        "status",
+        "modified_at",
+        "indexed_at",
+    )
+    list_filter = ("source", "status", "mime_type")
+    search_fields = ("title", "external_id", "owner_email")
+    readonly_fields = (
+        "source",
+        "external_id",
+        "size_bytes",
+        "text_truncated",
+        "extracted_at",
+        "indexed_at",
+        "created_at",
+        "updated_at",
+    )
+    date_hierarchy = "modified_at"
+
+
+@admin.register(IngestionCursor)
+class IngestionCursorAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
+    list_display = (
+        "source",
+        "cursor",
+        "last_full_sync_at",
+        "last_incremental_sync_at",
+        "files_total",
+        "files_indexed",
+        "files_failed",
+    )
+    readonly_fields = ("last_full_sync_at", "last_incremental_sync_at")

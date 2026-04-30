@@ -8,13 +8,12 @@ from typing import Any
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.core.cache import cache
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from apps.core.middleware import require_membership
+from apps.core.middleware import require_admin, require_membership
 from apps.data_access.insight_functions import (
     get_cashflow_snapshot,
     get_team_activity_summary,
@@ -92,6 +91,7 @@ def google_workspace_callback(request: HttpRequest) -> HttpResponse:
 
 @login_required
 @require_membership
+@require_admin
 @require_POST
 def disconnect(request: HttpRequest, provider: str) -> HttpResponse:
     Integration.objects.filter(provider=provider).update(is_active=False)
@@ -117,13 +117,11 @@ _CARD_FETCHERS: dict[str, Any] = {
 
 def _load_card(name: str, *, refresh: bool = False) -> dict[str, Any]:
     fetcher = _CARD_FETCHERS[name]
-    if refresh:
-        # Bust the @cache_result wrapper by deleting its known cache prefix entries.
-        # The decorator stores under "<key_prefix>:<args-hash>"; for our zero-arg
-        # functions the suffix is stable, so a wildcard-free delete_pattern would
-        # be needed. Instead, we just call through — fresh DB read every call is
-        # cheap and aligns with explicit user intent.
-        cache.clear()
+    # ``refresh`` is currently a no-op: insight fetchers do not use the cache
+    # decorator, so they always read fresh. Avoid ``cache.clear()`` here — that
+    # would flush the global Redis (LLM cache, sessions) and force costly
+    # re-spend on every refresh click.
+    _ = refresh
     try:
         result = fetcher()
     except InsufficientData as exc:
@@ -155,3 +153,73 @@ def insight_card(request: HttpRequest, name: str) -> HttpResponse:
     refresh = request.method == "POST" or request.GET.get("refresh") == "1"
     card = _load_card(name, refresh=refresh)
     return render(request, _CARD_TEMPLATES[name], {"card": card})
+
+
+# ---------------------------------------------------------------------------
+# Google Workspace DWD admin views (setup wizard + ingestion dashboard)
+# ---------------------------------------------------------------------------
+@login_required
+@require_membership
+def workspace_dwd_setup(request: HttpRequest) -> HttpResponse:
+    """Show DWD configuration status. Real upload of SA JSON is handled out-of-band
+    (settings env vars) for security — UI surfaces what's missing."""
+    config = {
+        "domain": settings.GOOGLE_WORKSPACE_DOMAIN,
+        "admin_email": settings.GOOGLE_WORKSPACE_ADMIN_EMAIL,
+        "sa_json_path_set": bool(settings.GOOGLE_WORKSPACE_SA_JSON_PATH),
+        "sa_json_inline_set": bool(settings.GOOGLE_WORKSPACE_SA_JSON),
+        "scopes": settings.GOOGLE_WORKSPACE_DWD_SCOPES,
+    }
+    config["ready"] = bool(
+        config["domain"]
+        and config["admin_email"]
+        and (config["sa_json_path_set"] or config["sa_json_inline_set"])
+    )
+    return render(request, "integrations/workspace_dwd_setup.html", {"config": config})
+
+
+@login_required
+@require_membership
+@require_admin
+@require_POST
+def workspace_dwd_ingest(request: HttpRequest) -> HttpResponse:
+    """Trigger a full or incremental Workspace ingest from the dashboard."""
+    from django.db import connection
+
+    from apps.data_access.tasks import knowledge_full_ingest, knowledge_incremental_ingest
+
+    mode = request.POST.get("mode", "incremental")
+    schema = connection.tenant.schema_name  # type: ignore[attr-defined]
+    if mode == "full":
+        knowledge_full_ingest.delay(schema)
+    else:
+        knowledge_incremental_ingest.delay(schema)
+    return redirect("workspace_dwd_dashboard")
+
+
+@login_required
+@require_membership
+def workspace_dwd_dashboard(request: HttpRequest) -> HttpResponse:
+    """Status dashboard: cursor info, document counts, recent failures."""
+    from django.db.models import Count
+
+    from apps.data_access.models import IngestionCursor, WorkspaceDocument
+
+    cursor = IngestionCursor.objects.filter(source="drive_changes").first()
+    by_status = dict(
+        WorkspaceDocument.objects.values_list("status")
+        .annotate(n=Count("id"))
+        .values_list("status", "n")
+    )
+    recent_failures = WorkspaceDocument.objects.filter(status="failed").order_by(
+        "-updated_at"
+    )[:20]
+    return render(
+        request,
+        "integrations/workspace_dwd_dashboard.html",
+        {
+            "cursor": cursor,
+            "by_status": by_status,
+            "recent_failures": recent_failures,
+        },
+    )

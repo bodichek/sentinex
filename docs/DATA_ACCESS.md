@@ -88,6 +88,17 @@ def get_weekly_metrics(org: Organization) -> WeeklyMetrics:
 - `get_project_status(org, project_id) -> ProjectStatus`
 - `get_bottleneck_signals(org) -> list[Bottleneck]`
 
+**Knowledge (RAG over Workspace)**
+- `search_company_knowledge(query, top_k=8, source=None, owner_email=None)
+  -> KnowledgeAnswerContext`
+
+  Semantic top-K search over indexed Drive/Gmail/Calendar artifacts. Returns
+  both structured hits (for UI rendering) and a pre-formatted prompt block
+  with citations (drop-in for LLM system prompts). Backed by the pgvector
+  table `data_access_knowledgechunk` and the OpenAI embedding model
+  configured via `KNOWLEDGE_EMBEDDING_MODEL`. See
+  `docs/GOOGLE_WORKSPACE_DWD.md` for the full pipeline.
+
 ### Writing a New Insight Function
 
 #### 1. Define the output type
@@ -219,10 +230,30 @@ The MCP Gateway provides a unified interface for interacting with MCP (Model Con
 
 ### Supported MCP Servers (MVP)
 
-**Google Workspace** (official Anthropic MCP server)
-- Gmail (read, search)
-- Calendar (events, availability)
-- Drive (files, shared documents)
+**Google Workspace — per-user OAuth** (`google_workspace`)
+- 3-legged OAuth, each user connects their own account.
+- Backed by the official Anthropic Google Workspace MCP server when
+  `SENTINEX_MCP_GW_URL` is set; otherwise calls return stubs.
+- Best for early pilots / read-only on a single user mailbox.
+
+**Google Workspace — Domain-Wide Delegation** (`google_workspace_dwd`)
+- Service Account + DWD: one-time admin authorisation, no per-user
+  consent screens.
+- Direct Google API client (`google-api-python-client`) — no MCP server
+  required for this provider.
+- Read scope across the entire Workspace: Gmail, Drive, Calendar, Docs,
+  Sheets, Slides, Directory, Reports/audit, Tasks, Keep, Chat.
+- Implementation: `apps/data_access/mcp/integrations/google_workspace_dwd.py`
+- See `docs/GOOGLE_WORKSPACE_DWD.md` for full setup, scopes, cost model
+  and privacy notes.
+
+**Slack** (`slack`)
+- Bot-token integration via `slack-sdk`.
+- Channel listing, message search, user metadata.
+
+The default registry that knows about all three providers is in
+`apps/data_access/mcp/registry.py` — call `default_gateway()` everywhere
+instead of constructing `MCPGateway({...})` ad-hoc.
 
 ### Adding a New MCP Integration
 
@@ -483,3 +514,119 @@ def test_mcp_gateway_google_workspace(mock_mcp_server):
 - MCP calls include tenant filter
 - Audit log for all external API calls
 - Never log raw response data (PII risk)
+
+## Knowledge Pipeline (RAG over Workspace)
+
+Sentinex turns the customer's entire Google Workspace into a queryable
+knowledge index. The pipeline is fully tenant-scoped and runs on top of the
+DWD connector described above.
+
+### End-to-end flow
+
+```
+discovery   → extraction      → chunking       → embedding         → indexing
+files.list    per-MIME           token-aware     OpenAI                pgvector
+(domain)      handler            chunker         text-embedding-       (raw SQL +
+                                                 3-small               ivfflat idx)
+                                                 (1536-dim)
+```
+
+Module map (`apps/data_access/knowledge/`):
+
+| File | Responsibility |
+|------|----------------|
+| `discovery.py` | Paginate `drive.files.list` over the domain; emit start/page tokens for incremental sync. |
+| `extractors/base.py` | Registry mapping MIME type → handler returning `ExtractionResult`. |
+| `extractors/google_docs.py` | `application/vnd.google-apps.document` via Drive export to `text/plain`. |
+| `extractors/google_sheets.py` | `application/vnd.google-apps.spreadsheet` via Sheets API; flat TSV with sheet headers. |
+| `extractors/google_slides.py` | `application/vnd.google-apps.presentation` via Slides API; per-slide text runs. |
+| `extractors/pdf.py` | `application/pdf` via Drive `get_media` + `pypdf`. |
+| `extractors/plain_text.py` | `text/plain`, `text/markdown`, `text/csv`, `text/html`. |
+| `extractors/gmail.py` | Gmail message → headers + plain-text body. |
+| `chunker.py` | Token-aware chunker (tiktoken `cl100k_base`); paragraph-first, hard-split fallback. |
+| `embedder.py` | Thin wrapper that delegates to `apps/agents/embedding_gateway` (Redis cache, retries, cost accounting, structured `sentinex.llm` events, tenant attribution). Enforces dimension match against `KNOWLEDGE_EMBEDDING_DIMENSIONS`. Stub mode preserved for offline dev. |
+| `indexer.py` | Orchestrates extract → chunk → embed → upsert into `data_access_knowledgechunk`. |
+| `search.py` | Cosine-similarity retrieval; `format_hits_for_prompt` for citation-style RAG. |
+| `tasks.py` | Celery: `full_ingest_workspace`, `incremental_ingest_workspace`, per-file `ingest_drive_file`. |
+| `views.py` + `urls.py` | `/knowledge/` HTMX live search page. |
+
+### Models
+
+- `WorkspaceDocument` — one row per Drive file / Gmail thread / Calendar
+  artifact. Captures source, external_id, title, mime, owner, modified_at,
+  size, status (`pending` → `extracted` → `indexed` / `failed` / `skipped`),
+  raw extracted text (capped at 1 MB).
+- `IngestionCursor` — per-source watermark; for Drive holds the
+  `startPageToken` returned by Drive Changes API.
+- `KnowledgeChunk` — chunk-level rows with `text`, `token_count`,
+  `embedding vector(1536)`, `metadata jsonb`. Created via raw SQL in
+  migration `0005_knowledge_chunk` so the `vector` extension can be probed
+  first; `Meta.managed = False` keeps Django from emitting standard CREATE
+  TABLE.
+
+### Operating it
+
+CLI:
+
+```bash
+# Full or incremental
+python manage.py workspace_ingest --tenant=acme --mode=full
+python manage.py workspace_ingest --tenant=acme --mode=incremental
+
+# Directory / audit one-shots
+python manage.py workspace_ingest --tenant=acme --mode=directory --domain=acme.cz
+python manage.py workspace_ingest --tenant=acme --mode=audit --days=7
+
+# Smoke-test the index
+python manage.py knowledge_search --tenant=acme --query="cenotvorba 2026"
+```
+
+UI:
+
+- `/integrations/google_workspace_dwd/setup/` — config status (3 dots).
+- `/integrations/google_workspace_dwd/dashboard/` — counts per status,
+  cursor info, recent failures, full / incremental buttons.
+- `/knowledge/` — HTMX live search page with cited snippets.
+
+Celery Beat (defined in `config/settings/base.py`):
+
+| Task | Schedule | Purpose |
+|------|----------|---------|
+| `data_access.knowledge_incremental_dispatch` | every 5 min | fan out incremental ingest per active DWD tenant |
+| `data_access.workspace_directory_dispatch`   | daily       | refresh employee list / org units |
+| `data_access.workspace_audit_dispatch`       | hourly      | pull last-24h login audit |
+| `data_access.sync_slack_dispatch`            | every 6 h   | unrelated, listed for completeness |
+
+### Cost model (rough)
+
+For a 50-employee org with ~1 GB indexed text:
+
+| Item | One-off | Recurring |
+|------|---------|-----------|
+| Embedding (text-embedding-3-small @ $0.02 / 1M tok) | ~$5 | <$1 / month (drift) |
+| pgvector storage (~600 MB) | included | included |
+| LLM RAG queries (Sonnet, 8 hits × ~600 tok each) | — | ~$0.005 / query |
+
+### Embedding gateway (single chokepoint)
+
+All real OpenAI embedding traffic — both ingest (`indexer.py`) and query
+(`search.py`) — flows through `apps/agents/embedding_gateway.embed()`.
+That gives RAG the same operational guarantees as LLM completions:
+
+- Exact-match Redis cache keyed on `(model, text)` — duplicate chunks /
+  repeated queries become free.
+- Tenacity-based retries with exponential backoff.
+- Cost accounting in USD via `PRICE_USD_PER_MILLION_TOKENS`.
+- Structured `sentinex.llm` JSON event with tenant tag, latency, cache
+  hit ratio.
+
+`apps/data_access/knowledge/embedder.py` is intentionally a thin façade —
+no direct `from openai import OpenAI` outside the gateway.
+
+### Stub mode for local dev
+
+Set `KNOWLEDGE_STUB_MODE=True` (or just leave `OPENAI_API_KEY` empty) and
+the embedder returns deterministic pseudo-vectors instead of calling
+OpenAI. The pipeline runs end-to-end and `search_chunks` works against
+your local pgvector, just with low-quality similarity. Useful for testing
+extractors / chunker without burning API credit.

@@ -25,11 +25,25 @@
       <li class="py-3 text-gray-500">Zatím žádné integrace.</li>
     {% endfor %}
   </ul>
-  <form method="post" action="{% url 'connect_google_workspace' %}" class="mt-6">
-    {% csrf_token %}
-    <button class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-      Připojit Google Workspace
-    </button>
-  </form>
+  <div class="mt-6 flex flex-wrap gap-3">
+    <form method="post" action="{% url 'connect_google_workspace' %}">
+      {% csrf_token %}
+      <button class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+        Připojit Google Workspace (per-user OAuth)
+      </button>
+    </form>
+    <a href="{% url 'workspace_dwd_setup' %}"
+       class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
+      Nastavit Workspace (Domain-Wide Delegation)
+    </a>
+    <a href="{% url 'workspace_dwd_dashboard' %}"
+       class="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300">
+      Knowledge dashboard
+    </a>
+    <a href="{% url 'knowledge_search' %}"
+       class="bg-emerald-600 text-white px-4 py-2 rounded hover:bg-emerald-700">
+      Hledat ve znalostech
+    </a>
+  </div>
 </div>
 {% endblock %}

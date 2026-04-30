@@ -156,6 +156,7 @@ Pure Python functions with typed inputs and outputs. Framework-agnostic (no Scal
 - `get_team_activity_summary(org, period) -> TeamActivity`
 - `get_upcoming_commitments(org) -> list[Commitment]`
 - `get_cashflow_snapshot(org) -> CashflowSnapshot`
+- `search_company_knowledge(query, top_k) -> KnowledgeAnswerContext` — RAG retrieval over the Workspace knowledge index
 
 Each function:
 - Has typed inputs and outputs (Pydantic or dataclasses)
@@ -165,21 +166,37 @@ Each function:
 
 **MCP Gateway**
 
-Abstraction over MCP servers.
+Abstraction over MCP servers and direct API clients alike.
 
-- Self-hosted MCP servers for shared integrations (Google Workspace primary in MVP)
+- Provider registry: `google_workspace` (per-user OAuth), `google_workspace_dwd`
+  (Service Account + Domain-Wide Delegation), `slack` (bot token)
 - Per-tenant credential storage (encrypted with django-cryptography)
-- OAuth flow management
-- Audit log for all MCP calls
+- OAuth flow management for per-user providers
+- Audit log for all calls (`MCPCall` model)
 - Token counting contribution to LLM cost tracking
+- Default registry: `apps/data_access/mcp/registry.default_gateway()`
 
 **Direct API Clients**
 
 Custom Python clients for systems without MCP servers.
 
+- Google Workspace via `google-api-python-client` under DWD
+  (Gmail, Drive, Calendar, Docs, Sheets, Slides, Directory, Reports)
 - Future: Pohoda, ABRA, Helios (Czech accounting systems)
 - Banking APIs (PSD2)
 - Legacy ERP integrations
+
+**Knowledge Pipeline (RAG)**
+
+Workspace-wide ingestion that produces a queryable knowledge index.
+
+- `apps/data_access/knowledge/` — discovery, extractors (per MIME),
+  token-aware chunker, OpenAI embedder, pgvector indexer, semantic search
+- `WorkspaceDocument` (metadata) + `KnowledgeChunk` (1536-dim vectors,
+  raw-SQL migration so pgvector / ivfflat are managed explicitly)
+- Initial bulk ingest + Drive Changes API incremental sync via Celery Beat
+- Powers the `KnowledgeSpecialist` agent and the `/knowledge/` HTMX page
+- Full design: `docs/GOOGLE_WORKSPACE_DWD.md`
 
 **Sync Pipelines**
 
@@ -188,7 +205,8 @@ Celery workers for ETL.
 - Scheduled tasks (daily, hourly, weekly)
 - Fetch from source → transform → store as metrics
 - Emit events (`data.synced`) for downstream processing
-- Data minimization: store metrics, not raw data
+- Data minimization: store metrics, not raw data (Knowledge index is
+  the deliberate exception — raw text is needed for retrieval)
 - Retention policy per data type
 
 ### Layer 7: Addons Layer

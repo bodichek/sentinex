@@ -1,0 +1,31 @@
+{% if error %}
+  <div class="p-3 rounded bg-red-50 border border-red-200 text-red-700 text-sm">
+    Chyba: {{ error }}
+  </div>
+{% elif query and not hits %}
+  <div class="p-4 text-gray-500 text-sm">
+    Žádné výsledky pro „{{ query }}". Zkus přeformulovat dotaz nebo ověř, že je index naplněný.
+  </div>
+{% elif hits %}
+  <ul class="divide-y">
+    {% for h in hits %}
+      <li class="py-4">
+        <div class="flex items-baseline justify-between">
+          <a href="{{ h.metadata.web_view_link }}" target="_blank"
+             class="font-medium text-blue-700 hover:underline truncate max-w-2xl">
+            {{ h.metadata.title|default:"(bez názvu)" }}
+          </a>
+          <span class="text-xs text-gray-500 ml-3">
+            sim {{ h.similarity|floatformat:3 }}
+          </span>
+        </div>
+        <div class="text-xs text-gray-500 mt-0.5">
+          {{ h.metadata.mime_type }} ·
+          {{ h.metadata.owner_email }} ·
+          chunk #{{ h.chunk_index }}
+        </div>
+        <p class="mt-2 text-sm text-gray-700 whitespace-pre-line line-clamp-4">{{ h.text }}</p>
+      </li>
+    {% endfor %}
+  </ul>
+{% endif %}

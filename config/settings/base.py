@@ -139,6 +139,27 @@ CELERY_RESULT_SERIALIZER = "json"
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TIMEZONE = "Europe/Prague"
 
+# Periodic tasks. ``data_access.knowledge_incremental_dispatch`` and
+# ``data_access.workspace_directory_dispatch`` fan out per active tenant.
+CELERY_BEAT_SCHEDULE: dict[str, dict[str, object]] = {
+    "knowledge-incremental-every-5min": {
+        "task": "data_access.knowledge_incremental_dispatch",
+        "schedule": 300.0,
+    },
+    "workspace-directory-daily": {
+        "task": "data_access.workspace_directory_dispatch",
+        "schedule": 86400.0,
+    },
+    "workspace-audit-hourly": {
+        "task": "data_access.workspace_audit_dispatch",
+        "schedule": 3600.0,
+    },
+    "slack-sync-every-6h": {
+        "task": "data_access.sync_slack_dispatch",
+        "schedule": 21600.0,
+    },
+}
+
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
@@ -193,6 +214,55 @@ GOOGLE_OAUTH_SCOPES = [
     "https://www.googleapis.com/auth/calendar.readonly",
     "https://www.googleapis.com/auth/drive.readonly",
 ]
+
+# Domain-Wide Delegation (Service Account) — single connector for entire Workspace.
+# Path to service-account.json on disk OR raw JSON in env var.
+GOOGLE_WORKSPACE_SA_JSON_PATH = env("GOOGLE_WORKSPACE_SA_JSON_PATH", default="")
+GOOGLE_WORKSPACE_SA_JSON = env("GOOGLE_WORKSPACE_SA_JSON", default="")
+GOOGLE_WORKSPACE_DOMAIN = env("GOOGLE_WORKSPACE_DOMAIN", default="")
+GOOGLE_WORKSPACE_ADMIN_EMAIL = env("GOOGLE_WORKSPACE_ADMIN_EMAIL", default="")
+
+# Full read-only scope set for company-wide ingestion.
+GOOGLE_WORKSPACE_DWD_SCOPES = [
+    # Gmail
+    "https://www.googleapis.com/auth/gmail.readonly",
+    # Drive
+    "https://www.googleapis.com/auth/drive.readonly",
+    "https://www.googleapis.com/auth/drive.metadata.readonly",
+    # Calendar
+    "https://www.googleapis.com/auth/calendar.readonly",
+    "https://www.googleapis.com/auth/calendar.events.readonly",
+    # Docs / Sheets / Slides
+    "https://www.googleapis.com/auth/documents.readonly",
+    "https://www.googleapis.com/auth/spreadsheets.readonly",
+    "https://www.googleapis.com/auth/presentations.readonly",
+    # People / Contacts / Directory
+    "https://www.googleapis.com/auth/contacts.readonly",
+    "https://www.googleapis.com/auth/contacts.other.readonly",
+    "https://www.googleapis.com/auth/directory.readonly",
+    # Admin SDK Directory (admin-only)
+    "https://www.googleapis.com/auth/admin.directory.user.readonly",
+    "https://www.googleapis.com/auth/admin.directory.group.readonly",
+    "https://www.googleapis.com/auth/admin.directory.orgunit.readonly",
+    # Admin SDK Reports (audit + usage)
+    "https://www.googleapis.com/auth/admin.reports.audit.readonly",
+    "https://www.googleapis.com/auth/admin.reports.usage.readonly",
+    # Tasks / Keep
+    "https://www.googleapis.com/auth/tasks.readonly",
+    "https://www.googleapis.com/auth/keep.readonly",
+    # Chat (Workspace only)
+    "https://www.googleapis.com/auth/chat.messages.readonly",
+    "https://www.googleapis.com/auth/chat.spaces.readonly",
+    "https://www.googleapis.com/auth/chat.memberships.readonly",
+]
+
+# Knowledge ingestion configuration
+KNOWLEDGE_EMBEDDING_MODEL = env("KNOWLEDGE_EMBEDDING_MODEL", default="text-embedding-3-small")
+KNOWLEDGE_EMBEDDING_DIMENSIONS = env.int("KNOWLEDGE_EMBEDDING_DIMENSIONS", default=1536)
+KNOWLEDGE_CHUNK_SIZE_TOKENS = env.int("KNOWLEDGE_CHUNK_SIZE_TOKENS", default=800)
+KNOWLEDGE_CHUNK_OVERLAP_TOKENS = env.int("KNOWLEDGE_CHUNK_OVERLAP_TOKENS", default=100)
+KNOWLEDGE_MAX_FILE_BYTES = env.int("KNOWLEDGE_MAX_FILE_BYTES", default=20_000_000)  # 20 MB
+KNOWLEDGE_STUB_MODE = env.bool("KNOWLEDGE_STUB_MODE", default=False)
 
 ANTHROPIC_API_KEY = env("ANTHROPIC_API_KEY", default="")
 OPENAI_API_KEY = env("OPENAI_API_KEY", default="")

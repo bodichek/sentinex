@@ -114,6 +114,54 @@ docker compose -f docker-compose.prod.yml exec web python manage.py collectstati
 docker compose -f docker-compose.prod.yml exec web python manage.py createsuperuser
 ```
 
+#### Required environment variables
+
+Beyond the standard Django secrets / DB / Redis / Anthropic-OpenAI keys
+documented in `.env.example`, production deploys that enable the Workspace
+DWD connector need:
+
+```bash
+# Service Account JSON — file path preferred
+GOOGLE_WORKSPACE_SA_JSON_PATH=/var/secrets/sentinex-sa.json
+# (or inline JSON in container envs)
+# GOOGLE_WORKSPACE_SA_JSON={"type":"service_account",...}
+
+GOOGLE_WORKSPACE_DOMAIN=acme.cz
+GOOGLE_WORKSPACE_ADMIN_EMAIL=admin@acme.cz
+
+# Knowledge ingestion (defaults are sane; override only if needed)
+KNOWLEDGE_EMBEDDING_MODEL=text-embedding-3-small
+KNOWLEDGE_EMBEDDING_DIMENSIONS=1536
+KNOWLEDGE_CHUNK_SIZE_TOKENS=800
+KNOWLEDGE_CHUNK_OVERLAP_TOKENS=100
+KNOWLEDGE_MAX_FILE_BYTES=20000000
+KNOWLEDGE_STUB_MODE=False
+```
+
+The SA JSON file should be **read-only for the sentinex user**, not
+checked in, and rotated on the same cadence as other secrets.
+See `docs/GOOGLE_WORKSPACE_DWD.md` for end-to-end setup.
+
+#### Celery Beat (scheduled jobs)
+
+`config/settings/base.py` ships with a `CELERY_BEAT_SCHEDULE`:
+
+| Task | Schedule |
+|------|----------|
+| `data_access.knowledge_incremental_dispatch` | every 5 min |
+| `data_access.workspace_directory_dispatch`   | daily |
+| `data_access.workspace_audit_dispatch`       | hourly |
+| `data_access.sync_slack_dispatch`            | every 6 h |
+
+Production must run a single Beat process (not multiple instances —
+django-celery-beat uses Postgres locks but a single instance is safest):
+
+```bash
+docker compose -f docker-compose.prod.yml up -d celery-beat
+```
+
+Workers and Beat read the same Redis broker as the web instances.
+
 #### Zero-downtime deploy
 
 Production runs two app container instances (`web_a` and `web_b`). Nginx upstream switches between them.

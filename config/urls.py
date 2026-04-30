@@ -22,6 +22,7 @@ urlpatterns = [
     path("integrations/", include("apps.data_access.urls")),
     path("insights/", include(insights_urlpatterns)),
     path("chat/", include("apps.chat.urls")),
+    path("knowledge/", include("apps.data_access.knowledge.urls")),
     path("addons/weekly-brief/", include("apps.addons.weekly_brief.urls")),
     path("", include("apps.core.urls")),
 ]

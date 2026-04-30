@@ -11,19 +11,33 @@ from django.conf import settings
 from django.db import models
 
 
+_INSECURE_DEFAULT_KEY = "insecure-dev-cryptography-key-change"
+_MIN_KEY_LENGTH = 32
+
+
 def _fernet() -> Fernet:
-    # Derive a 32-byte urlsafe key from CRYPTOGRAPHY_KEY (truncate or pad).
-    raw = settings.CRYPTOGRAPHY_KEY.encode("utf-8")
-    padded = (raw + b"0" * 32)[:32]
-    key = base64.urlsafe_b64encode(padded)
-    return Fernet(key)
+    raw_text = settings.CRYPTOGRAPHY_KEY
+    if not settings.DEBUG and raw_text == _INSECURE_DEFAULT_KEY:
+        raise RuntimeError(
+            "CRYPTOGRAPHY_KEY is set to the insecure development default; "
+            "set a strong value in the environment before running outside DEBUG."
+        )
+    if len(raw_text) < _MIN_KEY_LENGTH:
+        raise RuntimeError(
+            f"CRYPTOGRAPHY_KEY must be at least {_MIN_KEY_LENGTH} characters; "
+            f"got {len(raw_text)}."
+        )
+    raw = raw_text.encode("utf-8")[:_MIN_KEY_LENGTH]
+    return Fernet(base64.urlsafe_b64encode(raw))
 
 
 class Integration(models.Model):
     PROVIDER_GOOGLE_WORKSPACE = "google_workspace"
+    PROVIDER_GOOGLE_WORKSPACE_DWD = "google_workspace_dwd"
     PROVIDER_SLACK = "slack"
     PROVIDER_CHOICES: ClassVar[list[tuple[str, str]]] = [
-        (PROVIDER_GOOGLE_WORKSPACE, "Google Workspace"),
+        (PROVIDER_GOOGLE_WORKSPACE, "Google Workspace (per-user OAuth)"),
+        (PROVIDER_GOOGLE_WORKSPACE_DWD, "Google Workspace (Domain-Wide Delegation)"),
         (PROVIDER_SLACK, "Slack"),
     ]
 
@@ -126,3 +140,112 @@ class DataSnapshot(models.Model):
 
     def __str__(self) -> str:
         return f"{self.source} {self.period_start}..{self.period_end}"
+
+
+class WorkspaceDocument(models.Model):
+    """Metadata for a single Google Workspace artifact (Drive file, Gmail thread, etc.)."""
+
+    SOURCE_DRIVE = "drive"
+    SOURCE_GMAIL = "gmail"
+    SOURCE_CALENDAR = "calendar"
+    SOURCE_CHOICES: ClassVar[list[tuple[str, str]]] = [
+        (SOURCE_DRIVE, "Drive"),
+        (SOURCE_GMAIL, "Gmail"),
+        (SOURCE_CALENDAR, "Calendar"),
+    ]
+
+    STATUS_PENDING = "pending"
+    STATUS_EXTRACTED = "extracted"
+    STATUS_INDEXED = "indexed"
+    STATUS_FAILED = "failed"
+    STATUS_SKIPPED = "skipped"
+    STATUS_CHOICES: ClassVar[list[tuple[str, str]]] = [
+        (STATUS_PENDING, "Pending"),
+        (STATUS_EXTRACTED, "Extracted"),
+        (STATUS_INDEXED, "Indexed"),
+        (STATUS_FAILED, "Failed"),
+        (STATUS_SKIPPED, "Skipped"),
+    ]
+
+    source = models.CharField(max_length=20, choices=SOURCE_CHOICES, db_index=True)
+    external_id = models.CharField(max_length=255, db_index=True)
+    title = models.CharField(max_length=512, blank=True)
+    mime_type = models.CharField(max_length=128, blank=True)
+    owner_email = models.EmailField(blank=True)
+    web_view_link = models.URLField(max_length=1024, blank=True)
+    modified_at: models.DateTimeField[None, None] = models.DateTimeField(null=True, blank=True)
+    size_bytes = models.BigIntegerField(default=0)
+    text_content = models.TextField(blank=True)
+    text_truncated = models.BooleanField(default=False)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
+    error = models.CharField(max_length=500, blank=True)
+    extracted_at: models.DateTimeField[None, None] = models.DateTimeField(null=True, blank=True)
+    indexed_at: models.DateTimeField[None, None] = models.DateTimeField(null=True, blank=True)
+    metadata = models.JSONField(default=dict, blank=True)
+    created_at: models.DateTimeField[None, None] = models.DateTimeField(auto_now_add=True)
+    updated_at: models.DateTimeField[None, None] = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        app_label = "data_access"
+        unique_together = ("source", "external_id")
+        indexes: ClassVar[list[models.Index]] = [
+            models.Index(fields=["source", "status"]),
+            models.Index(fields=["owner_email"]),
+            models.Index(fields=["-modified_at"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.source}:{self.external_id} {self.title[:40]}"
+
+
+class IngestionCursor(models.Model):
+    """Per-source incremental sync cursor (Drive changes pageToken, Gmail historyId, etc.)."""
+
+    source = models.CharField(max_length=40, unique=True)
+    cursor = models.CharField(max_length=255, blank=True)
+    last_full_sync_at: models.DateTimeField[None, None] = models.DateTimeField(
+        null=True, blank=True
+    )
+    last_incremental_sync_at: models.DateTimeField[None, None] = models.DateTimeField(
+        null=True, blank=True
+    )
+    files_total = models.IntegerField(default=0)
+    files_indexed = models.IntegerField(default=0)
+    files_failed = models.IntegerField(default=0)
+
+    class Meta:
+        app_label = "data_access"
+
+    def __str__(self) -> str:
+        return f"cursor[{self.source}]={self.cursor[:20]}"
+
+
+class KnowledgeChunk(models.Model):
+    """Chunked + embedded slice of a WorkspaceDocument used for RAG.
+
+    Table is created via raw SQL in a migration so the pgvector extension can be
+    checked/created first; ``managed = False`` keeps Django from emitting CREATE
+    TABLE through the standard migration codegen.
+    """
+
+    id = models.UUIDField(primary_key=True)
+    document = models.ForeignKey(
+        WorkspaceDocument,
+        on_delete=models.CASCADE,
+        related_name="chunks",
+        db_constraint=False,
+    )
+    chunk_index = models.IntegerField()
+    text = models.TextField()
+    token_count = models.IntegerField(default=0)
+    embedding = models.JSONField(null=True, blank=True)  # placeholder for type stubs
+    metadata = models.JSONField(default=dict, blank=True)
+    created_at: models.DateTimeField[None, None] = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        app_label = "data_access"
+        managed = False
+        db_table = "data_access_knowledgechunk"
+
+    def __str__(self) -> str:
+        return f"chunk[{self.document_id}#{self.chunk_index}] {self.text[:40]}"
