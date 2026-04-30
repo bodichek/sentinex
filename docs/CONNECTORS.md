@@ -117,6 +117,92 @@ wizard calls `/members/me` to validate before activating.
 The HTTP client refreshes the access token on a 401 and retries the call
 once. Refreshed credentials are persisted back into `Credential.encrypted_tokens`.
 
+## Roadmap — planned connectors
+
+Verified during research (2026‑04). Status legend: ✅ shipped · 🟡 planned ·
+🚧 needs OAuth app registration · ❓ blocked / awaiting vendor.
+
+### Group A — official MCP transport (use the `mcp` Python SDK like Canva)
+
+| Provider | Auth | Endpoint / source | Sentinex use |
+|---|---|---|---|
+| 🟡 Notion | OAuth 2.0 | Official Notion MCP server | search, pages, databases — feeds Knowledge RAG alongside Workspace DWD |
+| 🟡 HubSpot | OAuth 2.0 | Official HubSpot MCP (Breeze MCP Client) | contacts, deals, pipelines, tickets — alternate CRM to Pipedrive |
+| 🟡 Jira (Atlassian) | OAuth 2.0 (3LO) | Official Atlassian Remote MCP | issues, sprints, JQL search — tech-team velocity |
+| 🟡 Dropbox | OAuth 2.0 + PKCE | Official Dropbox Remote MCP | files, search — alternate Knowledge RAG source |
+
+### Group B — REST + OAuth 2.0, no public MCP yet
+
+| Provider | Auth | API base | Sentinex use |
+|---|---|---|---|
+| 🟡 Microsoft 365 (mail + Teams + OneDrive + Calendar) | OAuth 2.0 (Microsoft Graph) | `https://graph.microsoft.com/v1.0` | one connector covers Outlook, Teams chat/meetings, OneDrive, Calendar — MS-shop alternative to Workspace DWD. Community `ms-365-mcp-server` exists; we go REST for stability. |
+| 🟡 Salesforce | OAuth 2.0 (web server flow) + per-org instance URL | `<instance>/services/data/vXX.X/` | accounts, opportunities, leads — enterprise CRM |
+| 🟡 Asana | OAuth 2.0 or PAT | `https://app.asana.com/api/1.0/` | tasks, projects, throughput |
+| 🟡 Basecamp | OAuth 2.0 (37signals) | `https://3.basecampapi.com/{account_id}/` | todos, messages, schedule |
+| 🟡 Mailchimp | OAuth 2.0 *or* API key (data-center prefix) | `https://{dc}.api.mailchimp.com/3.0/` | audience growth, campaign engagement |
+| 🟡 Calendly | OAuth 2.0 or PAT | `https://api.calendly.com/` (v2) | scheduling load, no-show rate |
+
+### Group C — Czech tools (paste-key flow, like SmartEmailing / Trello)
+
+| Provider | Auth | API docs | Sentinex use |
+|---|---|---|---|
+| 🟡 Raynet CRM | API key | `https://app.raynetcrm.com/api/doc/index-en.html` | Czech CRM — accounts, deals, activities |
+| 🟡 Caflou | API key (Bearer) | Postman: `https://documenter.getpostman.com/view/4786951/RWMFrTQC` | Czech all-in-one — clients, projects, invoices |
+| 🟡 Ecomail | API key | `https://docs.ecomail.cz/` (v2) | Czech e-mail marketing alternative to SmartEmailing |
+| 🟡 FAPI | API key + email | `https://web.fapi.cz/api-doc/` | Czech invoicing + affiliate — revenue signal for the finance specialist |
+
+### Architectural decisions taken during planning
+
+- **Microsoft 365 + Teams + OneDrive + Outlook = one connector app**
+  (`apps/connectors/microsoft365/`) over Microsoft Graph. Single OAuth
+  flow, single refresh token, dispatcher exposes
+  `mail.*`, `teams.*`, `onedrive.*`, `calendar.*` tools.
+- **CRM insight unification.** `get_pipeline_velocity` will be widened
+  to read the most recent snapshot whose `source` is in
+  `{pipedrive, hubspot, salesforce, raynet}` so dashboards stay neutral
+  to which CRM the tenant uses.
+- **Marketing insight unification.** `get_marketing_funnel` will be
+  widened to read snapshots from `{smartemailing, ecomail, mailchimp}`
+  for the same reason.
+- **Knowledge RAG sources.** Notion, Dropbox and OneDrive will plug
+  into the existing `WorkspaceDocument` + `KnowledgeChunk` pipeline as
+  additional `source` values; the chunker / embedder / search layer
+  does not need changes.
+
+### Suggested delivery order
+
+| Sprint | Connectors | Rationale |
+|---|---|---|
+| W1 | Microsoft 365 (Graph: mail + Teams + OneDrive + Calendar) | highest ROI for MS-shop tenants, expands Knowledge RAG to OneDrive |
+| W2 | Notion (MCP) + Asana | broadens RAG coverage + project/PM signal |
+| W3 | HubSpot (MCP) + Jira (MCP) | CRM + tech-team velocity via official MCP servers |
+| W4 | Salesforce + Calendly | enterprise CRM + scheduling load metrics |
+| W5 | Mailchimp + Basecamp + Dropbox (MCP) | rounds out marketing / PM / file sources |
+| W6 | Raynet + Caflou + Ecomail + FAPI | Czech all-in-one, paste-key — ~1 day each |
+
+### Pre-flight checklist (do before W1 starts)
+
+For every Group A & B connector we need a **platform-level OAuth app**
+registered in the vendor's developer portal. The `client_id` /
+`client_secret` go in `.env` (one app per provider, shared across
+tenants). Per-tenant tokens stay in `Credential.encrypted_tokens`.
+
+| Provider | Where to register |
+|---|---|
+| Microsoft 365 | Azure portal → App registrations |
+| Notion | notion.so/my-integrations |
+| HubSpot | developers.hubspot.com/apps |
+| Atlassian / Jira | developer.atlassian.com → OAuth 2.0 (3LO) apps |
+| Dropbox | dropbox.com/developers/apps |
+| Salesforce | Setup → App Manager → New Connected App |
+| Asana | app.asana.com/0/my-apps |
+| Basecamp | launchpad.37signals.com/integrations |
+| Mailchimp | admin.mailchimp.com/account/oauth2 |
+| Calendly | calendly.com/integrations/api_webhooks |
+
+Czech connectors (Group C) need no app registration — each tenant's
+admin pastes their own API key in the setup wizard.
+
 ## Adding a new connector
 
 1. Scaffold `apps/connectors/<name>/` with the file layout above.
