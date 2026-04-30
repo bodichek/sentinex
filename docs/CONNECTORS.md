@@ -117,6 +117,55 @@ wizard calls `/members/me` to validate before activating.
 The HTTP client refreshes the access token on a 401 and retries the call
 once. Refreshed credentials are persisted back into `Credential.encrypted_tokens`.
 
+## Group A/B/C connectors — shipped 2026-04
+
+The following 14 providers were added in a single batch alongside the
+existing Slack, SmartEmailing, Pipedrive, Canva, Trello and Workspace
+(per-user + DWD) connectors.
+
+### Group A — official MCP transport (`mcp` Python SDK + Streamable HTTP)
+
+| Provider | Auth | MCP endpoint | Tools | Sync |
+|---|---|---|---|---|
+| **Notion** (`apps.connectors.notion`) | OAuth 2.0 | `https://mcp.notion.com/mcp` | dynamic (`tools/list` cached on install in `Integration.meta`) | daily |
+| **Dropbox** (`apps.connectors.dropbox`) | OAuth 2.1 + PKCE | `https://mcp.dropbox.com/mcp` | dynamic | daily |
+
+Both follow the Canva pattern: `oauth.py` handles the OAuth handshake,
+`client.py` opens a per-call `streamablehttp_client` session with
+`Authorization: Bearer <access_token>`, and `integration.py` exposes a
+generic `tools/call` proxy so newly-added server tools work without
+code changes.
+
+### Group B — REST + OAuth 2.0 (no public MCP yet)
+
+| Provider | Auth | API base | Snapshot metrics | Sync |
+|---|---|---|---|---|
+| **Microsoft 365** | OAuth 2.0 v2 + `offline_access` | `https://graph.microsoft.com/v1.0` | mail (unread + top senders), calendar (upcoming), OneDrive root, joined Teams | every 2 h |
+| **Salesforce** | OAuth 2.0 web-server flow + per-org `instance_url` | `<instance>/services/data/v60.0` | accounts, opportunities (by stage / status / value), leads, users | every 2 h |
+| **HubSpot** | OAuth 2.0 | `https://api.hubapi.com` | contacts, companies, deals (by stage / status / amount), pipelines, tickets | every 2 h |
+| **Jira** | OAuth 2.0 3LO — discovers `cloudId` via `accessible-resources` | `https://api.atlassian.com/ex/jira/{cloudId}/rest/api/3` | projects, recent / open / done issue counts, JQL search | every 2 h |
+| **Asana** | OAuth 2.0 + refresh | `https://app.asana.com/api/1.0` | workspaces, projects, tasks (open / completed / overdue) | every 2 h |
+| **Basecamp** | OAuth 2.0 (37signals Launchpad) — discovers `account_id` | `https://3.basecampapi.com/{account_id}` | projects (active vs all), todolists, messages | every 6 h |
+| **Mailchimp** | OAuth 2.0 — DC discovered via `/oauth2/metadata` | `https://{dc}.api.mailchimp.com/3.0` | audience, campaigns (open rate, CTR) | daily |
+| **Calendly** | OAuth 2.0 (Basic on token endpoint) | `https://api.calendly.com` | event types, scheduled events (upcoming + by status) | daily |
+
+Token refresh is automatic on 401 with one retry; refreshed tokens are
+persisted back into `Credential.encrypted_tokens`.
+
+### Group C — paste-key flow (Czech tools)
+
+| Provider | Auth | Docs | Snapshot metrics | Sync |
+|---|---|---|---|---|
+| **Raynet CRM** | HTTP Basic (`instance` + `username` + `api_key`) | [api.doc](https://app.raynetcrm.com/api/doc/index-en.html) | companies count, leads count, business cases (by state, value), invoices | every 6 h |
+| **Caflou** | Bearer token | [docs.caflou.cz](https://docs.caflou.cz/integrace/api) | companies / projects / tasks / invoices / timesheets counts | daily |
+| **Ecomail** | `key` header | [docs.ecomail.cz](https://docs.ecomail.cz/) | audience (lists, total subscribers), campaigns (open rate, CTR) | daily |
+| **FAPI** | HTTP Basic (e-mail + api_key) | [web.fapi.cz/api-doc](https://web.fapi.cz/api-doc/) | invoices (by status + total / paid amount), clients, vouchers | every 6 h |
+
+All Group C connectors use a 3-step Google-consent-style wizard at
+`/integrations/<provider>/setup/`: (1) where to find the credential,
+(2) how to generate it, (3) paste form — the wizard pings the upstream
+API before activating the integration.
+
 ## Roadmap — planned connectors
 
 Verified during research (2026‑04). Status legend: ✅ shipped · 🟡 planned ·

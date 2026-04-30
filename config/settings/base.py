@@ -63,6 +63,20 @@ TENANT_APPS = [
     "apps.connectors.pipedrive",
     "apps.connectors.canva",
     "apps.connectors.trello",
+    "apps.connectors.raynet",
+    "apps.connectors.caflou",
+    "apps.connectors.ecomail",
+    "apps.connectors.fapi",
+    "apps.connectors.microsoft365",
+    "apps.connectors.salesforce",
+    "apps.connectors.asana",
+    "apps.connectors.basecamp",
+    "apps.connectors.mailchimp",
+    "apps.connectors.calendly",
+    "apps.connectors.hubspot",
+    "apps.connectors.jira",
+    "apps.connectors.notion",
+    "apps.connectors.dropbox",
 ]
 
 INSTALLED_APPS = [*SHARED_APPS, *[a for a in TENANT_APPS if a not in SHARED_APPS]]
@@ -179,6 +193,20 @@ CELERY_BEAT_SCHEDULE: dict[str, dict[str, object]] = {
         "task": "connectors.trello.dispatch",
         "schedule": 7200.0,
     },
+    "raynet-every-6h":      {"task": "connectors.raynet.dispatch",      "schedule": 21600.0},
+    "caflou-daily":         {"task": "connectors.caflou.dispatch",      "schedule": 86400.0},
+    "ecomail-daily":        {"task": "connectors.ecomail.dispatch",     "schedule": 86400.0},
+    "fapi-every-6h":        {"task": "connectors.fapi.dispatch",        "schedule": 21600.0},
+    "ms365-every-2h":       {"task": "connectors.microsoft365.dispatch","schedule": 7200.0},
+    "salesforce-every-2h":  {"task": "connectors.salesforce.dispatch",  "schedule": 7200.0},
+    "asana-every-2h":       {"task": "connectors.asana.dispatch",       "schedule": 7200.0},
+    "basecamp-every-6h":    {"task": "connectors.basecamp.dispatch",    "schedule": 21600.0},
+    "mailchimp-daily":      {"task": "connectors.mailchimp.dispatch",   "schedule": 86400.0},
+    "calendly-daily":       {"task": "connectors.calendly.dispatch",    "schedule": 86400.0},
+    "hubspot-every-2h":     {"task": "connectors.hubspot.dispatch",     "schedule": 7200.0},
+    "jira-every-2h":        {"task": "connectors.jira.dispatch",        "schedule": 7200.0},
+    "notion-daily":         {"task": "connectors.notion.dispatch",      "schedule": 86400.0},
+    "dropbox-daily":        {"task": "connectors.dropbox.dispatch",     "schedule": 86400.0},
 }
 
 CACHES = {
@@ -242,6 +270,47 @@ PIPEDRIVE_CLIENT_SECRET = env("PIPEDRIVE_CLIENT_SECRET", default="")
 # Canva OAuth 2.1 + PKCE (used for both REST and the official MCP server).
 CANVA_CLIENT_ID = env("CANVA_CLIENT_ID", default="")
 CANVA_CLIENT_SECRET = env("CANVA_CLIENT_SECRET", default="")
+
+# Microsoft 365 / Graph (mail + Teams + OneDrive + Calendar via one OAuth)
+MS365_CLIENT_ID = env("MS365_CLIENT_ID", default="")
+MS365_CLIENT_SECRET = env("MS365_CLIENT_SECRET", default="")
+
+# Salesforce OAuth 2.0
+SALESFORCE_CLIENT_ID = env("SALESFORCE_CLIENT_ID", default="")
+SALESFORCE_CLIENT_SECRET = env("SALESFORCE_CLIENT_SECRET", default="")
+SALESFORCE_LOGIN_HOST = env("SALESFORCE_LOGIN_HOST", default="https://login.salesforce.com")
+
+# Asana OAuth 2.0
+ASANA_CLIENT_ID = env("ASANA_CLIENT_ID", default="")
+ASANA_CLIENT_SECRET = env("ASANA_CLIENT_SECRET", default="")
+
+# Basecamp OAuth (37signals Launchpad)
+BASECAMP_CLIENT_ID = env("BASECAMP_CLIENT_ID", default="")
+BASECAMP_CLIENT_SECRET = env("BASECAMP_CLIENT_SECRET", default="")
+
+# Mailchimp OAuth 2.0
+MAILCHIMP_CLIENT_ID = env("MAILCHIMP_CLIENT_ID", default="")
+MAILCHIMP_CLIENT_SECRET = env("MAILCHIMP_CLIENT_SECRET", default="")
+
+# Calendly OAuth 2.0
+CALENDLY_CLIENT_ID = env("CALENDLY_CLIENT_ID", default="")
+CALENDLY_CLIENT_SECRET = env("CALENDLY_CLIENT_SECRET", default="")
+
+# HubSpot OAuth 2.0
+HUBSPOT_CLIENT_ID = env("HUBSPOT_CLIENT_ID", default="")
+HUBSPOT_CLIENT_SECRET = env("HUBSPOT_CLIENT_SECRET", default="")
+
+# Atlassian / Jira OAuth 2.0 (3LO)
+ATLASSIAN_CLIENT_ID = env("ATLASSIAN_CLIENT_ID", default="")
+ATLASSIAN_CLIENT_SECRET = env("ATLASSIAN_CLIENT_SECRET", default="")
+
+# Notion OAuth 2.0 (token reused for the official MCP server)
+NOTION_CLIENT_ID = env("NOTION_CLIENT_ID", default="")
+NOTION_CLIENT_SECRET = env("NOTION_CLIENT_SECRET", default="")
+
+# Dropbox OAuth 2.0 + PKCE (token reused for the official MCP server)
+DROPBOX_CLIENT_ID = env("DROPBOX_CLIENT_ID", default="")
+DROPBOX_CLIENT_SECRET = env("DROPBOX_CLIENT_SECRET", default="")
 GOOGLE_OAUTH_SCOPES = [
     "https://www.googleapis.com/auth/gmail.readonly",
     "https://www.googleapis.com/auth/calendar.readonly",

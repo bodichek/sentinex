@@ -39,6 +39,20 @@ class Integration(models.Model):
     PROVIDER_PIPEDRIVE = "pipedrive"
     PROVIDER_CANVA = "canva"
     PROVIDER_TRELLO = "trello"
+    PROVIDER_RAYNET = "raynet"
+    PROVIDER_CAFLOU = "caflou"
+    PROVIDER_ECOMAIL = "ecomail"
+    PROVIDER_FAPI = "fapi"
+    PROVIDER_MICROSOFT365 = "microsoft365"
+    PROVIDER_SALESFORCE = "salesforce"
+    PROVIDER_ASANA = "asana"
+    PROVIDER_BASECAMP = "basecamp"
+    PROVIDER_MAILCHIMP = "mailchimp"
+    PROVIDER_CALENDLY = "calendly"
+    PROVIDER_HUBSPOT = "hubspot"
+    PROVIDER_JIRA = "jira"
+    PROVIDER_NOTION = "notion"
+    PROVIDER_DROPBOX = "dropbox"
     PROVIDER_CHOICES: ClassVar[list[tuple[str, str]]] = [
         (PROVIDER_GOOGLE_WORKSPACE, "Google Workspace (per-user OAuth)"),
         (PROVIDER_GOOGLE_WORKSPACE_DWD, "Google Workspace (Domain-Wide Delegation)"),
@@ -47,6 +61,20 @@ class Integration(models.Model):
         (PROVIDER_PIPEDRIVE, "Pipedrive"),
         (PROVIDER_CANVA, "Canva (MCP)"),
         (PROVIDER_TRELLO, "Trello"),
+        (PROVIDER_RAYNET, "Raynet CRM"),
+        (PROVIDER_CAFLOU, "Caflou"),
+        (PROVIDER_ECOMAIL, "Ecomail"),
+        (PROVIDER_FAPI, "FAPI"),
+        (PROVIDER_MICROSOFT365, "Microsoft 365 (mail + Teams + OneDrive)"),
+        (PROVIDER_SALESFORCE, "Salesforce"),
+        (PROVIDER_ASANA, "Asana"),
+        (PROVIDER_BASECAMP, "Basecamp"),
+        (PROVIDER_MAILCHIMP, "Mailchimp"),
+        (PROVIDER_CALENDLY, "Calendly"),
+        (PROVIDER_HUBSPOT, "HubSpot"),
+        (PROVIDER_JIRA, "Jira (Atlassian)"),
+        (PROVIDER_NOTION, "Notion (MCP)"),
+        (PROVIDER_DROPBOX, "Dropbox (MCP)"),
     ]
 
     provider = models.CharField(max_length=40, choices=PROVIDER_CHOICES)

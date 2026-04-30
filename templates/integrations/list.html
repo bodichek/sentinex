@@ -38,6 +38,34 @@
 
   {% include "connectors/_tile.html" with provider="trello" provider_name="Trello" provider_subtitle="Boards, cards, lists, actions" connect_url="connectors_trello:setup" connect_method="get" badges="API key + token" %}
 
+  {% include "connectors/_tile.html" with provider="microsoft365" provider_name="Microsoft 365" provider_subtitle="Outlook, Teams, OneDrive, Calendar přes Microsoft Graph" connect_url="connectors_microsoft365:connect" connect_method="post" badges="OAuth 2.0" %}
+
+  {% include "connectors/_tile.html" with provider="salesforce" provider_name="Salesforce" provider_subtitle="Accounts, opportunities, leads — enterprise CRM" connect_url="connectors_salesforce:connect" connect_method="post" badges="OAuth 2.0 · per-org instance" %}
+
+  {% include "connectors/_tile.html" with provider="hubspot" provider_name="HubSpot" provider_subtitle="Contacts, deals, pipelines, tickets" connect_url="connectors_hubspot:connect" connect_method="post" badges="OAuth 2.0" %}
+
+  {% include "connectors/_tile.html" with provider="notion" provider_name="Notion" provider_subtitle="Pages, databases, search — přes oficiální MCP" connect_url="connectors_notion:connect" connect_method="post" badges="MCP · OAuth 2.0" %}
+
+  {% include "connectors/_tile.html" with provider="jira" provider_name="Jira (Atlassian)" provider_subtitle="Projects, issues, JQL search" connect_url="connectors_jira:connect" connect_method="post" badges="OAuth 2.0 (3LO)" %}
+
+  {% include "connectors/_tile.html" with provider="asana" provider_name="Asana" provider_subtitle="Workspaces, projects, tasks" connect_url="connectors_asana:connect" connect_method="post" badges="OAuth 2.0" %}
+
+  {% include "connectors/_tile.html" with provider="basecamp" provider_name="Basecamp" provider_subtitle="Projects, todolists, messages" connect_url="connectors_basecamp:connect" connect_method="post" badges="OAuth 2.0 (37signals)" %}
+
+  {% include "connectors/_tile.html" with provider="mailchimp" provider_name="Mailchimp" provider_subtitle="Audience, campaigns, reports" connect_url="connectors_mailchimp:connect" connect_method="post" badges="OAuth 2.0" %}
+
+  {% include "connectors/_tile.html" with provider="calendly" provider_name="Calendly" provider_subtitle="Event types, scheduled events, scheduling load" connect_url="connectors_calendly:connect" connect_method="post" badges="OAuth 2.0" %}
+
+  {% include "connectors/_tile.html" with provider="dropbox" provider_name="Dropbox" provider_subtitle="Files, search — přes oficiální MCP" connect_url="connectors_dropbox:connect" connect_method="post" badges="MCP · OAuth 2.1 + PKCE" %}
+
+  {% include "connectors/_tile.html" with provider="raynet" provider_name="Raynet CRM" provider_subtitle="Český CRM — companies, leads, business cases" connect_url="connectors_raynet:setup" connect_method="get" badges="API key" %}
+
+  {% include "connectors/_tile.html" with provider="caflou" provider_name="Caflou" provider_subtitle="Český all-in-one — projects, invoices, timesheets" connect_url="connectors_caflou:setup" connect_method="get" badges="Bearer token" %}
+
+  {% include "connectors/_tile.html" with provider="ecomail" provider_name="Ecomail" provider_subtitle="Český e-mail marketing — kampaně + audience" connect_url="connectors_ecomail:setup" connect_method="get" badges="API key" %}
+
+  {% include "connectors/_tile.html" with provider="fapi" provider_name="FAPI" provider_subtitle="Český invoicing — revenue signal pro finance" connect_url="connectors_fapi:setup" connect_method="get" badges="API key + e-mail" %}
+
 </section>
 
 <section class="mt-10">

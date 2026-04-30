@@ -1,0 +1,43 @@
+{% extends "app_shell.html" %}
+{% block title %}Ecomail — Sentinex{% endblock %}
+{% block content %}
+<div class="max-w-3xl mx-auto">
+  <a href="{% url 'list_integrations' %}" class="sx-link text-sm flex items-center gap-1 mb-4"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg> zpět na konektory</a>
+  <div class="sx-glass-strong p-8">
+    <div class="flex items-start justify-between mb-6">
+      <div class="flex items-center gap-4">
+        <div class="sx-tile-icon" style="width:56px;height:56px;border-radius:14px;">{% include "connectors/_icons.html" with icon="ecomail" %}</div>
+        <div>
+          <div class="text-[11px] uppercase tracking-widest sx-mute sx-mono">Připojit konektor</div>
+          <h1 class="sx-h1 mt-1">Ecomail</h1>
+          <div class="sx-muted text-sm mt-1">Šifrované per-tenant. Nikdy v <span class="sx-code">.env</span>.</div>
+        </div>
+      </div>
+      {% if integration.is_active %}<span class="sx-pill sx-pill-on">●&nbsp;Aktivní</span>{% else %}<span class="sx-pill">○&nbsp;Nepřipojeno</span>{% endif %}
+    </div>
+    {% if error %}<div class="mb-6 p-3 rounded-lg border border-red-400/40 bg-red-500/10 text-red-200 text-sm">{{ error }}</div>{% endif %}
+    <ol class="space-y-4">
+      <li class="p-5 rounded-lg sx-glass">
+        <div class="flex items-start gap-3"><span class="sx-step-dot" style="border-color: var(--sx-success); color: var(--sx-success);">1</span>
+          <div class="flex-1"><div class="font-medium">V Ecomailu otevři Nastavení</div><div class="sx-muted text-sm mt-1"><a href="https://app.ecomail.cz" target="_blank" class="sx-link">app.ecomail.cz</a> → <span class="sx-code">Nastavení → Integrace → API</span>.</div></div>
+        </div>
+      </li>
+      <li class="p-5 rounded-lg sx-glass">
+        <div class="flex items-start gap-3"><span class="sx-step-dot" style="border-color: var(--sx-success); color: var(--sx-success);">2</span>
+          <div class="flex-1"><div class="font-medium">Zkopíruj API klíč</div><div class="sx-muted text-sm mt-1">API klíč se zobrazí v sekci API. Pokud ještě neexistuje, klikni na <em>Vygenerovat</em>.</div></div>
+        </div>
+      </li>
+      <li class="p-5 rounded-lg" style="background: rgba(0,229,255,0.05); border: 1px solid rgba(0,229,255,0.20);">
+        <div class="flex items-start gap-3"><span class="sx-step-dot" style="border-color: var(--sx-accent); color: var(--sx-accent); box-shadow: 0 0 0 3px rgba(0,229,255,0.10);">3</span>
+          <div class="flex-1"><div class="font-medium">Vlož klíč</div>
+            <form method="post" action="{% url 'connectors_ecomail:save' %}" class="mt-4 space-y-4">{% csrf_token %}
+              <div><label class="block text-xs uppercase tracking-widest sx-mute sx-mono mb-1.5">API klíč</label><input name="api_key" type="password" required class="sx-input" placeholder="••••"></div>
+              <div class="flex gap-3 pt-2"><button class="sx-btn sx-btn-primary">Uložit a ověřit</button><a href="{% url 'list_integrations' %}" class="sx-btn sx-btn-ghost">Zrušit</a></div>
+            </form>
+          </div>
+        </div>
+      </li>
+    </ol>
+  </div>
+</div>
+{% endblock %}
