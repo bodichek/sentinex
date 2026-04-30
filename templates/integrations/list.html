@@ -4,6 +4,7 @@
 <div class="bg-white rounded-lg shadow p-6">
   <h1 class="text-xl font-semibold">Integrace</h1>
   <p class="text-sm text-gray-600 mt-1">Připojené systémy, ze kterých Sentinex čerpá data.</p>
+
   <ul class="mt-6 divide-y">
     {% for i in integrations %}
       <li class="py-3 flex items-center justify-between">
@@ -12,6 +13,7 @@
           <div class="text-sm {% if i.is_active %}text-green-700{% else %}text-gray-500{% endif %}">
             {% if i.is_active %}Aktivní{% else %}Neaktivní{% endif %}
             {% if i.connected_at %} — připojeno {{ i.connected_at|date:"j. n. Y" }}{% endif %}
+            {% if i.last_sync_at %} · poslední sync {{ i.last_sync_at|date:"j. n. Y H:i" }}{% endif %}
           </div>
         </div>
         {% if i.is_active %}
@@ -25,17 +27,56 @@
       <li class="py-3 text-gray-500">Zatím žádné integrace.</li>
     {% endfor %}
   </ul>
-  <div class="mt-6 flex flex-wrap gap-3">
+
+  <h2 class="mt-8 text-lg font-semibold">Připojit konektor</h2>
+  <div class="mt-4 grid gap-3 sm:grid-cols-2">
+
     <form method="post" action="{% url 'connect_google_workspace' %}">
       {% csrf_token %}
-      <button class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-        Připojit Google Workspace (per-user OAuth)
+      <button class="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+        Google Workspace (per-user OAuth)
       </button>
     </form>
+
     <a href="{% url 'workspace_dwd_setup' %}"
-       class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
-      Nastavit Workspace (Domain-Wide Delegation)
+       class="block text-center bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
+      Google Workspace (Domain-Wide Delegation)
     </a>
+
+    <form method="post" action="{% url 'connectors_slack:connect' %}">
+      {% csrf_token %}
+      <button class="w-full bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700">
+        Slack (OAuth v2)
+      </button>
+    </form>
+
+    <a href="{% url 'connectors_smartemailing:setup' %}"
+       class="block text-center bg-rose-600 text-white px-4 py-2 rounded hover:bg-rose-700">
+      SmartEmailing
+    </a>
+
+    <form method="post" action="{% url 'connectors_pipedrive:connect' %}">
+      {% csrf_token %}
+      <button class="w-full bg-emerald-600 text-white px-4 py-2 rounded hover:bg-emerald-700">
+        Pipedrive (OAuth 2.0)
+      </button>
+    </form>
+
+    <form method="post" action="{% url 'connectors_canva:connect' %}">
+      {% csrf_token %}
+      <button class="w-full bg-cyan-600 text-white px-4 py-2 rounded hover:bg-cyan-700">
+        Canva (MCP, OAuth 2.1 + PKCE)
+      </button>
+    </form>
+
+    <a href="{% url 'connectors_trello:setup' %}"
+       class="block text-center bg-sky-600 text-white px-4 py-2 rounded hover:bg-sky-700">
+      Trello
+    </a>
+  </div>
+
+  <h2 class="mt-8 text-lg font-semibold">Knowledge</h2>
+  <div class="mt-4 flex flex-wrap gap-3">
     <a href="{% url 'workspace_dwd_dashboard' %}"
        class="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300">
       Knowledge dashboard

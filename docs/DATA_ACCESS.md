@@ -88,6 +88,34 @@ def get_weekly_metrics(org: Organization) -> WeeklyMetrics:
 - `get_project_status(org, project_id) -> ProjectStatus`
 - `get_bottleneck_signals(org) -> list[Bottleneck]`
 
+**Marketing**
+- `get_marketing_funnel(period_days=30) -> MarketingFunnel`
+
+  Latest aggregated email-marketing performance from SmartEmailing.
+  Surfaces total contacts, active list count, delivered volume,
+  open-rate / CTR and the top-N campaigns. Reads the most recent
+  `DataSnapshot(source="smartemailing")`. Raises `InsufficientData`
+  when no snapshot exists yet. Backed by
+  `apps/data_access/insight_functions/marketing.py`.
+
+**Sales**
+- `get_pipeline_velocity(period_days=30) -> PipelineVelocity`
+
+  Latest pipeline velocity from Pipedrive: deal counts by status,
+  win-rate (`won / (won + lost)`), open-pipeline value, average open
+  deal size, activity completion rate, distribution by stage. Reads
+  the most recent `DataSnapshot(source="pipedrive")`. Backed by
+  `apps/data_access/insight_functions/sales.py`.
+
+**Projects / Delivery**
+- `get_project_throughput(period_days=7) -> ProjectThroughput`
+
+  Latest delivery / PM activity from Trello: board count, card
+  totals (open / overdue / completed), action volume, active members,
+  top-N boards by activity. Reads the most recent
+  `DataSnapshot(source="trello")`. Backed by
+  `apps/data_access/insight_functions/projects.py`.
+
 **Knowledge (RAG over Workspace)**
 - `search_company_knowledge(query, top_k=8, source=None, owner_email=None)
   -> KnowledgeAnswerContext`

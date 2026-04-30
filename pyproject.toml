@@ -36,6 +36,7 @@ google-auth = "^2.35"
 google-api-python-client = "^2.149"
 pypdf = "^5.1"
 tiktoken = "^0.8"
+mcp = "^1.9"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.7"

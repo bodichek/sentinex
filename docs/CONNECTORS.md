@@ -59,6 +59,48 @@ tenant that has the integration enabled.
 Setup: `/integrations/smartemailing/setup/` → user pastes username + API
 key. The wizard pings the API before activating.
 
+### Canva (`apps.connectors.canva`)
+
+Canva is the first connector that talks to a real **MCP server**, not a
+REST API. Auth is plain OAuth 2.1 + PKCE (so the same token works for the
+Canva Connect REST API too); calls are dispatched over the **Streamable
+HTTP** transport using the official `mcp` Python SDK.
+
+| | |
+|---|---|
+| Auth | OAuth 2.1 + PKCE (`CANVA_CLIENT_ID`/`SECRET`) |
+| Authorize URL | `https://www.canva.com/api/oauth/authorize` |
+| Token URL | `https://api.canva.com/rest/v1/oauth/token` |
+| MCP transport | Streamable HTTP at `https://mcp.canva.com/mcp` |
+| Default scopes | `design:meta:read design:content:read asset:read brandtemplate:meta:read folder:read profile:read comment:read` |
+| Sync schedule | daily |
+| Tools | dynamic — discovered via MCP `tools/list` at install time and cached in `Integration.meta['tools']`. `call(tool, params)` proxies to MCP `tools/call`, so any new server-side tool is callable without code changes. |
+
+Implementation notes:
+- `apps/connectors/canva/oauth.py` is the only place that knows about
+  PKCE — the view layer generates the verifier/challenge per install,
+  stashes the verifier in the session and feeds it to `exchange_code`.
+- `apps/connectors/canva/client.py` runs the async `mcp` SDK inside a
+  short `asyncio.run()` per call so Celery sync tasks can use it.
+- Sync (`sync.py`) probes a small set of conventional read tools
+  (`users/me`, `designs/list`, `brand-templates/list`, `folders/list`).
+  When a tool is missing or errors out the field is recorded as `null`
+  rather than failing the whole snapshot.
+
+### Trello (`apps.connectors.trello`)
+
+| | |
+|---|---|
+| Auth | API key + token (paste in setup wizard) |
+| Base URL | `https://api.trello.com/1` |
+| Token source | `https://trello.com/app-key` → "Token" link |
+| Sync schedule | every 2 h |
+| Snapshot metrics | `boards` (per-board cards + actions), aggregate `cards` (total/open/closed/overdue/completed), aggregate `actions` (volume + by_type + active members) |
+| Tools | `me`, `boards.list`, `lists.list`, `cards.list`, `actions.list` |
+
+Setup: `/integrations/trello/setup/` → user pastes API key + token; the
+wizard calls `/members/me` to validate before activating.
+
 ### Pipedrive (`apps.connectors.pipedrive`)
 
 | | |

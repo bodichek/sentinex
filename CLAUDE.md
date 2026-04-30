@@ -118,15 +118,31 @@ sentinex/
 
 ## Documentation Maintenance
 
-After significant changes, update relevant docs in `docs/`. The following files must stay synchronized with code:
+**MANDATORY:** Every commit MUST update the relevant doc in `docs/` in the
+same commit as the code change. Reviewers should reject any code-only PR
+that touches public APIs, agents, data-access, connectors, deployment or
+architecture without a corresponding doc update. "I'll add docs later" is
+not acceptable.
+
+The following files must stay synchronized with code:
 
 - `docs/ARCHITECTURE.md` — when architecture changes
 - `docs/ADDONS.md` — when addon contract changes
-- `docs/AGENTS.md` — when agent layer changes
-- `docs/DATA_ACCESS.md` — when Insight Functions API changes
+- `docs/AGENTS.md` — when agent layer changes (specialists, guardrails, gateway)
+- `docs/DATA_ACCESS.md` — when Insight Functions API or models change
+- `docs/CONNECTORS.md` — when a connector is added/changed (auth, scopes, sync, tools, env vars)
+- `docs/SECURITY.md` — when auth, encryption, decorators or threat model changes
 - `docs/DEPLOYMENT.md` — when deployment process changes
+- Provider-specific docs (e.g. `docs/GOOGLE_WORKSPACE_DWD.md`) when their connector changes
 
-Auto-documentation workflow is set up in `.github/workflows/docs-auto.yml` — it runs after push to `main` and opens a PR with doc updates if needed.
+Checklist before every commit:
+1. Did I add/change a connector? → update `docs/CONNECTORS.md`.
+2. Did I add/change an Insight Function? → update `docs/DATA_ACCESS.md` and the registry in `apps/data_access/insight_functions/__init__.py`.
+3. Did I add a new env var? → update `.env.example` AND the relevant doc.
+4. Did I change a security-relevant primitive (decorator, key handling, masking)? → update `docs/SECURITY.md`.
+5. Did I add a Celery beat task? → mention it in the relevant doc with cadence + purpose.
+
+Auto-documentation workflow is set up in `.github/workflows/docs-auto.yml` — it runs after push to `main` and opens a PR with doc updates if needed. The auto-PR is a safety net, not a substitute for documenting in the original commit.
 
 ## Security Rules
 

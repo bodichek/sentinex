@@ -23,6 +23,8 @@ urlpatterns = [
     path("integrations/slack/", include("apps.connectors.slack.urls")),
     path("integrations/smartemailing/", include("apps.connectors.smartemailing.urls")),
     path("integrations/pipedrive/", include("apps.connectors.pipedrive.urls")),
+    path("integrations/canva/", include("apps.connectors.canva.urls")),
+    path("integrations/trello/", include("apps.connectors.trello.urls")),
     path("insights/", include(insights_urlpatterns)),
     path("chat/", include("apps.chat.urls")),
     path("knowledge/", include("apps.data_access.knowledge.urls")),

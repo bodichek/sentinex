@@ -37,12 +37,16 @@ class Integration(models.Model):
     PROVIDER_SLACK = "slack"
     PROVIDER_SMARTEMAILING = "smartemailing"
     PROVIDER_PIPEDRIVE = "pipedrive"
+    PROVIDER_CANVA = "canva"
+    PROVIDER_TRELLO = "trello"
     PROVIDER_CHOICES: ClassVar[list[tuple[str, str]]] = [
         (PROVIDER_GOOGLE_WORKSPACE, "Google Workspace (per-user OAuth)"),
         (PROVIDER_GOOGLE_WORKSPACE_DWD, "Google Workspace (Domain-Wide Delegation)"),
         (PROVIDER_SLACK, "Slack"),
         (PROVIDER_SMARTEMAILING, "SmartEmailing"),
         (PROVIDER_PIPEDRIVE, "Pipedrive"),
+        (PROVIDER_CANVA, "Canva (MCP)"),
+        (PROVIDER_TRELLO, "Trello"),
     ]
 
     provider = models.CharField(max_length=40, choices=PROVIDER_CHOICES)

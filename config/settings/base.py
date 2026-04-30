@@ -61,6 +61,8 @@ TENANT_APPS = [
     "apps.connectors.slack",
     "apps.connectors.smartemailing",
     "apps.connectors.pipedrive",
+    "apps.connectors.canva",
+    "apps.connectors.trello",
 ]
 
 INSTALLED_APPS = [*SHARED_APPS, *[a for a in TENANT_APPS if a not in SHARED_APPS]]
@@ -169,6 +171,14 @@ CELERY_BEAT_SCHEDULE: dict[str, dict[str, object]] = {
         "task": "connectors.pipedrive.dispatch",
         "schedule": 7200.0,
     },
+    "canva-daily": {
+        "task": "connectors.canva.dispatch",
+        "schedule": 86400.0,
+    },
+    "trello-every-2h": {
+        "task": "connectors.trello.dispatch",
+        "schedule": 7200.0,
+    },
 }
 
 CACHES = {
@@ -228,6 +238,10 @@ SLACK_CLIENT_SECRET = env("SLACK_CLIENT_SECRET", default="")
 # Pipedrive OAuth 2.0
 PIPEDRIVE_CLIENT_ID = env("PIPEDRIVE_CLIENT_ID", default="")
 PIPEDRIVE_CLIENT_SECRET = env("PIPEDRIVE_CLIENT_SECRET", default="")
+
+# Canva OAuth 2.1 + PKCE (used for both REST and the official MCP server).
+CANVA_CLIENT_ID = env("CANVA_CLIENT_ID", default="")
+CANVA_CLIENT_SECRET = env("CANVA_CLIENT_SECRET", default="")
 GOOGLE_OAUTH_SCOPES = [
     "https://www.googleapis.com/auth/gmail.readonly",
     "https://www.googleapis.com/auth/calendar.readonly",
