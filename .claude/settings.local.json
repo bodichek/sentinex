@@ -66,7 +66,9 @@
       "Bash(git mv *)",
       "Bash(python -c \"import compileall, sys; ok = compileall.compile_dir\\('apps/connectors', quiet=1\\); sys.exit\\(0 if ok else 1\\)\")",
       "Bash(git reset *)",
-      "Bash(python *)"
+      "Bash(python *)",
+      "PowerShell(Select-String *)",
+      "PowerShell(try { $resp = Invoke-WebRequest -Uri \"http://acme.localhost:8000/integrations/\" -MaximumRedirection 0 -ErrorAction SilentlyContinue -UseBasicParsing; \"Status: $\\($resp.StatusCode\\)\" } catch { \"Result: $\\($_.Exception.Response.StatusCode.value__\\) $\\($_.Exception.Response.StatusDescription\\) -> $\\($_.Exception.Response.Headers['Location']\\)\" })"
     ]
   }
 }
