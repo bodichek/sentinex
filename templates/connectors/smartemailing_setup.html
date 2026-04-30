@@ -1,0 +1,27 @@
+{% extends "app_shell.html" %}
+{% block content %}
+<div class="max-w-xl mx-auto py-8">
+  <h1 class="text-2xl font-semibold mb-4">SmartEmailing</h1>
+  {% if error %}<div class="bg-red-50 text-red-800 p-3 mb-4 rounded">{{ error }}</div>{% endif %}
+  {% if integration and integration.is_active %}
+    <div class="bg-green-50 text-green-800 p-3 mb-4 rounded">
+      Připojeno {{ integration.connected_at|date:"d.m.Y H:i" }}.
+    </div>
+  {% endif %}
+  <form method="post" action="{% url 'connectors_smartemailing:save' %}" class="space-y-4">
+    {% csrf_token %}
+    <div>
+      <label class="block text-sm font-medium">Username (e-mail účtu SmartEmailing)</label>
+      <input name="username" type="text" required class="mt-1 w-full border rounded px-3 py-2">
+    </div>
+    <div>
+      <label class="block text-sm font-medium">API key</label>
+      <input name="api_key" type="password" required class="mt-1 w-full border rounded px-3 py-2">
+      <p class="text-xs text-gray-500 mt-1">
+        Najdeš v SmartEmailingu: <em>Nastavení → API → API klíč</em>.
+      </p>
+    </div>
+    <button class="bg-blue-600 text-white px-4 py-2 rounded">Uložit a ověřit</button>
+  </form>
+</div>
+{% endblock %}

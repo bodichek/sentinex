@@ -58,6 +58,9 @@ TENANT_APPS = [
     "apps.data_access",
     "apps.chat",
     "apps.addons.weekly_brief",
+    "apps.connectors.slack",
+    "apps.connectors.smartemailing",
+    "apps.connectors.pipedrive",
 ]
 
 INSTALLED_APPS = [*SHARED_APPS, *[a for a in TENANT_APPS if a not in SHARED_APPS]]
@@ -155,8 +158,16 @@ CELERY_BEAT_SCHEDULE: dict[str, dict[str, object]] = {
         "schedule": 3600.0,
     },
     "slack-sync-every-6h": {
-        "task": "data_access.sync_slack_dispatch",
+        "task": "connectors.slack.dispatch",
         "schedule": 21600.0,
+    },
+    "smartemailing-daily": {
+        "task": "connectors.smartemailing.dispatch",
+        "schedule": 86400.0,
+    },
+    "pipedrive-every-2h": {
+        "task": "connectors.pipedrive.dispatch",
+        "schedule": 7200.0,
     },
 }
 
@@ -209,6 +220,14 @@ PUBLIC_SCHEMA_NAME = "public"
 # ---------------------------------------------------------------------------
 GOOGLE_OAUTH_CLIENT_ID = env("GOOGLE_OAUTH_CLIENT_ID", default="")
 GOOGLE_OAUTH_CLIENT_SECRET = env("GOOGLE_OAUTH_CLIENT_SECRET", default="")
+
+# Slack OAuth v2 (optional — falls back to bot-token paste flow when unset).
+SLACK_CLIENT_ID = env("SLACK_CLIENT_ID", default="")
+SLACK_CLIENT_SECRET = env("SLACK_CLIENT_SECRET", default="")
+
+# Pipedrive OAuth 2.0
+PIPEDRIVE_CLIENT_ID = env("PIPEDRIVE_CLIENT_ID", default="")
+PIPEDRIVE_CLIENT_SECRET = env("PIPEDRIVE_CLIENT_SECRET", default="")
 GOOGLE_OAUTH_SCOPES = [
     "https://www.googleapis.com/auth/gmail.readonly",
     "https://www.googleapis.com/auth/calendar.readonly",

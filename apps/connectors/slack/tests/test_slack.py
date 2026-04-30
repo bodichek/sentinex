@@ -13,9 +13,10 @@ from django_tenants.utils import schema_context
 
 from apps.data_access.insight_functions.exceptions import InsufficientData
 from apps.data_access.insight_functions.slack import SlackActivity, get_slack_activity
-from apps.data_access.mcp.integrations.slack import SlackClient, SlackIntegration
+from apps.connectors.slack.client import SlackClient
+from apps.connectors.slack.integration import SlackIntegration
+from apps.connectors.slack.sync import SlackSyncPipeline, run_sync
 from apps.data_access.models import Credential, DataSnapshot, Integration
-from apps.data_access.sync.slack import SlackSyncPipeline, run_sync
 
 
 def _stub_slack_response(payload: dict[str, Any]) -> Any:
@@ -35,7 +36,7 @@ class TestSlackClientAuth:
             credential.save()
 
             with patch(
-                "apps.data_access.mcp.integrations.slack.WebClient"
+                "apps.connectors.slack.client.WebClient"
             ) as mock_web_client:
                 SlackClient(integration)
                 mock_web_client.assert_called_once_with(token="xoxb-test-token")

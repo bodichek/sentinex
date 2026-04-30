@@ -1,4 +1,4 @@
-"""Slack sync pipeline — channels, messages, users → DataSnapshot per tenant."""
+"""Slack sync pipeline — emits aggregated metrics to DataSnapshot."""
 
 from __future__ import annotations
 
@@ -8,33 +8,23 @@ from typing import Any
 
 from django.utils import timezone
 
-from apps.data_access.mcp.integrations.slack import SlackClient
+from apps.connectors.slack.client import SlackClient
 from apps.data_access.models import DataSnapshot, Integration
 
 logger = logging.getLogger(__name__)
 
 
 class SlackSyncPipeline:
-    """Fetch channels, messages, users and emit one ``DataSnapshot`` row.
-
-    Mirrors ``apps.data_access.sync.google_workspace`` — store *aggregated*
-    metrics, not raw message bodies, in line with the data-minimization rule
-    in ``docs/ARCHITECTURE.md``.
-    """
-
     source = "slack"
 
     def __init__(self, *, client: SlackClient | None = None) -> None:
         self._client = client
 
     def _resolve_client(self, integration: Integration) -> SlackClient:
-        return self._client if self._client is not None else SlackClient(integration)
-
-    # ------------------------------------------------------------------
+        return self._client or SlackClient(integration)
 
     def sync_channels(self, integration: Integration) -> list[dict[str, Any]]:
         client = self._resolve_client(integration)
-        channels = client.list_joined_channels()
         return [
             {
                 "id": c.get("id"),
@@ -42,7 +32,7 @@ class SlackSyncPipeline:
                 "num_members": c.get("num_members", 0),
                 "is_private": c.get("is_private", False),
             }
-            for c in channels
+            for c in client.list_joined_channels()
         ]
 
     def sync_messages(
