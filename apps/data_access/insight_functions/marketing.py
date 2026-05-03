@@ -1,4 +1,12 @@
-"""Marketing insights — backed by SmartEmailing DataSnapshots."""
+"""Marketing insights — unified across all e-mail marketing sources.
+
+Reads the most recent ``DataSnapshot`` whose source is one of
+``smartemailing``, ``ecomail`` or ``mailchimp``. The three connectors
+already write a parallel shape (``audience.total_contacts / list_count``
++ ``campaigns.top / open_rate / ctr / delivered``), so this insight
+just picks the freshest snapshot, surfaces the source name and presents
+the data uniformly to the dashboard.
+"""
 
 from __future__ import annotations
 
@@ -8,31 +16,33 @@ from typing import Any
 from apps.data_access.insight_functions.exceptions import InsufficientData
 from apps.data_access.models import DataSnapshot
 
+MARKETING_SOURCES = ("smartemailing", "ecomail", "mailchimp")
+
 
 @dataclass(frozen=True)
 class MarketingFunnel:
+    source: str
     total_contacts: int
     list_count: int
     delivered: int
     open_rate: float
     ctr: float
     top_campaigns: list[dict[str, Any]] = field(default_factory=list)
-    data_quality: str = "high"  # "high" | "partial" | "low"
+    data_quality: str = "high"
 
 
 def get_marketing_funnel(period_days: int = 30) -> MarketingFunnel:
-    """Latest aggregated email-marketing performance from SmartEmailing.
-
-    Reads the most recent ``DataSnapshot(source="smartemailing")``. Raises
-    ``InsufficientData`` when no snapshot exists.
-    """
+    """Latest aggregated email-marketing performance, source-agnostic."""
     snapshot = (
-        DataSnapshot.objects.filter(source="smartemailing")
+        DataSnapshot.objects.filter(source__in=MARKETING_SOURCES)
         .order_by("-period_end")
         .first()
     )
     if snapshot is None:
-        raise InsufficientData("No SmartEmailing snapshot available yet.")
+        raise InsufficientData(
+            "No e-mail marketing snapshot available yet. Connect "
+            "SmartEmailing / Ecomail / Mailchimp to populate this card."
+        )
 
     metrics = snapshot.metrics or {}
     audience = (metrics.get("audience") or {}).get("data") or {}
@@ -53,6 +63,7 @@ def get_marketing_funnel(period_days: int = 30) -> MarketingFunnel:
         quality = "high"
 
     return MarketingFunnel(
+        source=snapshot.source,
         total_contacts=total_contacts,
         list_count=list_count,
         delivered=delivered,

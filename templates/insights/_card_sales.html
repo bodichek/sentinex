@@ -1,0 +1,36 @@
+{% load humanize %}
+<div class="sx-glass p-5 h-full flex flex-col">
+  <div class="flex items-start justify-between">
+    <div>
+      <div class="text-[11px] uppercase tracking-widest sx-mute sx-mono">Sales</div>
+      <div class="text-lg font-semibold mt-1">Pipeline velocity</div>
+      {% if card.ok and card.data.source %}
+        <div class="text-xs sx-mute sx-mono mt-0.5">zdroj: {{ card.data.source }}</div>
+      {% endif %}
+    </div>
+    <button type="button"
+            hx-post="{% url 'insights:card' 'sales' %}"
+            hx-target="#card-sales"
+            hx-swap="innerHTML"
+            hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+            class="sx-btn text-xs">Refresh</button>
+  </div>
+  <div class="mt-4 flex-1">
+    {% if not card.ok %}
+      <div class="text-xs sx-pill sx-pill-warn">{{ card.error }}</div>
+    {% else %}
+      <dl class="text-sm space-y-2">
+        <div class="flex justify-between"><dt class="sx-muted">Dealů celkem</dt><dd class="font-medium sx-mono">{{ card.data.total_deals|intcomma }}</dd></div>
+        <div class="flex justify-between"><dt class="sx-muted">Otevřených</dt><dd class="font-medium sx-mono">{{ card.data.open_deals|intcomma }}</dd></div>
+        <div class="flex justify-between"><dt class="sx-muted">Won / Lost</dt><dd class="font-medium sx-mono">{{ card.data.won_count }} / {{ card.data.lost_count }}</dd></div>
+        <div class="flex justify-between"><dt class="sx-muted">Win rate</dt><dd class="font-medium sx-mono">{{ card.data.win_rate|floatformat:2 }}</dd></div>
+        <div class="flex justify-between"><dt class="sx-muted">Open value</dt><dd class="font-medium sx-mono">{{ card.data.total_open_value|floatformat:0|intcomma }}</dd></div>
+        <div class="flex justify-between"><dt class="sx-muted">Won value</dt><dd class="font-medium sx-mono">{{ card.data.total_won_value|floatformat:0|intcomma }}</dd></div>
+        <div class="flex justify-between"><dt class="sx-muted">Avg. open deal</dt><dd class="font-medium sx-mono">{{ card.data.avg_deal_value_open|floatformat:0|intcomma }}</dd></div>
+        <div class="flex justify-between"><dt class="sx-muted">Activity completion</dt><dd class="font-medium sx-mono">{{ card.data.activity_completion_rate|floatformat:2 }}</dd></div>
+        <div class="flex justify-between"><dt class="sx-muted">Kvalita dat</dt><dd class="font-medium">{{ card.data.data_quality }}</dd></div>
+      </dl>
+    {% endif %}
+  </div>
+  {% if card.as_of %}<div class="text-[11px] sx-mute sx-mono mt-4">akt. {{ card.as_of|date:"H:i:s" }}</div>{% endif %}
+</div>

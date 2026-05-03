@@ -1,7 +1,7 @@
-<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-5 h-full flex flex-col">
-  <div class="flex items-center justify-between">
+<div class="sx-glass p-5 h-full flex flex-col">
+  <div class="flex items-start justify-between">
     <div>
-      <div class="text-xs uppercase tracking-wide text-gray-400">Strategic</div>
+      <div class="text-[11px] uppercase tracking-widest sx-mute sx-mono">Strategic</div>
       <div class="text-lg font-semibold mt-1">Týdenní metriky</div>
     </div>
     <button type="button"
@@ -9,26 +9,20 @@
             hx-target="#card-strategic"
             hx-swap="innerHTML"
             hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
-            class="text-xs px-2.5 py-1 rounded border border-gray-300 hover:bg-gray-50 text-gray-700">
-      Refresh
-    </button>
+            class="sx-btn text-xs">Refresh</button>
   </div>
   <div class="mt-4 flex-1">
     {% if not card.ok %}
-      <div class="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded p-3">
-        Data nejsou dostupná: {{ card.error }}
-      </div>
+      <div class="text-xs sx-pill sx-pill-warn">{{ card.error }}</div>
     {% else %}
       <dl class="text-sm space-y-2">
-        <div class="flex justify-between"><dt class="text-gray-500">Email count</dt><dd class="font-medium">{{ card.data.email_count }}</dd></div>
-        <div class="flex justify-between"><dt class="text-gray-500">Calendar events</dt><dd class="font-medium">{{ card.data.calendar_events }}</dd></div>
-        <div class="flex justify-between"><dt class="text-gray-500">Drive changes</dt><dd class="font-medium">{{ card.data.drive_changes }}</dd></div>
-        <div class="flex justify-between"><dt class="text-gray-500">Období</dt><dd class="font-medium">{{ card.data.period_start }} → {{ card.data.period_end }}</dd></div>
-        <div class="flex justify-between"><dt class="text-gray-500">Kvalita dat</dt><dd class="font-medium">{{ card.data.data_quality }}</dd></div>
+        <div class="flex justify-between"><dt class="sx-muted">Email count</dt><dd class="font-medium sx-mono">{{ card.data.email_count }}</dd></div>
+        <div class="flex justify-between"><dt class="sx-muted">Calendar events</dt><dd class="font-medium sx-mono">{{ card.data.calendar_events }}</dd></div>
+        <div class="flex justify-between"><dt class="sx-muted">Drive changes</dt><dd class="font-medium sx-mono">{{ card.data.drive_changes }}</dd></div>
+        <div class="flex justify-between"><dt class="sx-muted">Období</dt><dd class="font-medium sx-mono">{{ card.data.period_start }} → {{ card.data.period_end }}</dd></div>
+        <div class="flex justify-between"><dt class="sx-muted">Kvalita dat</dt><dd class="font-medium">{{ card.data.data_quality }}</dd></div>
       </dl>
     {% endif %}
   </div>
-  {% if card.as_of %}
-  <div class="text-xs text-gray-400 mt-4">Aktualizováno: {{ card.as_of|date:"H:i:s" }}</div>
-  {% endif %}
+  {% if card.as_of %}<div class="text-[11px] sx-mute sx-mono mt-4">akt. {{ card.as_of|date:"H:i:s" }}</div>{% endif %}
 </div>

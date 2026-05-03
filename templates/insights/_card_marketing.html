@@ -1,0 +1,33 @@
+{% load humanize %}
+<div class="sx-glass p-5 h-full flex flex-col">
+  <div class="flex items-start justify-between">
+    <div>
+      <div class="text-[11px] uppercase tracking-widest sx-mute sx-mono">Marketing</div>
+      <div class="text-lg font-semibold mt-1">E-mail funnel</div>
+      {% if card.ok and card.data.source %}
+        <div class="text-xs sx-mute sx-mono mt-0.5">zdroj: {{ card.data.source }}</div>
+      {% endif %}
+    </div>
+    <button type="button"
+            hx-post="{% url 'insights:card' 'marketing' %}"
+            hx-target="#card-marketing"
+            hx-swap="innerHTML"
+            hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+            class="sx-btn text-xs">Refresh</button>
+  </div>
+  <div class="mt-4 flex-1">
+    {% if not card.ok %}
+      <div class="text-xs sx-pill sx-pill-warn">{{ card.error }}</div>
+    {% else %}
+      <dl class="text-sm space-y-2">
+        <div class="flex justify-between"><dt class="sx-muted">Kontaktů</dt><dd class="font-medium sx-mono">{{ card.data.total_contacts|intcomma }}</dd></div>
+        <div class="flex justify-between"><dt class="sx-muted">Listů</dt><dd class="font-medium sx-mono">{{ card.data.list_count }}</dd></div>
+        <div class="flex justify-between"><dt class="sx-muted">Doručeno (top N kampaní)</dt><dd class="font-medium sx-mono">{{ card.data.delivered|intcomma }}</dd></div>
+        <div class="flex justify-between"><dt class="sx-muted">Open rate</dt><dd class="font-medium sx-mono">{{ card.data.open_rate|floatformat:2 }}</dd></div>
+        <div class="flex justify-between"><dt class="sx-muted">CTR</dt><dd class="font-medium sx-mono">{{ card.data.ctr|floatformat:2 }}</dd></div>
+        <div class="flex justify-between"><dt class="sx-muted">Kvalita dat</dt><dd class="font-medium">{{ card.data.data_quality }}</dd></div>
+      </dl>
+    {% endif %}
+  </div>
+  {% if card.as_of %}<div class="text-[11px] sx-mute sx-mono mt-4">akt. {{ card.as_of|date:"H:i:s" }}</div>{% endif %}
+</div>

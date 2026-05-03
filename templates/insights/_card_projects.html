@@ -1,0 +1,37 @@
+{% load humanize %}
+<div class="sx-glass p-5 h-full flex flex-col">
+  <div class="flex items-start justify-between">
+    <div>
+      <div class="text-[11px] uppercase tracking-widest sx-mute sx-mono">Projects</div>
+      <div class="text-lg font-semibold mt-1">Throughput</div>
+      {% if card.ok and card.data.source %}
+        <div class="text-xs sx-mute sx-mono mt-0.5">zdroj: {{ card.data.source }}</div>
+      {% endif %}
+    </div>
+    <button type="button"
+            hx-post="{% url 'insights:card' 'projects' %}"
+            hx-target="#card-projects"
+            hx-swap="innerHTML"
+            hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+            class="sx-btn text-xs">Refresh</button>
+  </div>
+  <div class="mt-4 flex-1">
+    {% if not card.ok %}
+      <div class="text-xs sx-pill sx-pill-warn">{{ card.error }}</div>
+    {% else %}
+      <dl class="text-sm space-y-2">
+        <div class="flex justify-between"><dt class="sx-muted">Boards / projekty</dt><dd class="font-medium sx-mono">{{ card.data.boards }}</dd></div>
+        <div class="flex justify-between"><dt class="sx-muted">Položek celkem</dt><dd class="font-medium sx-mono">{{ card.data.total_items|intcomma }}</dd></div>
+        <div class="flex justify-between"><dt class="sx-muted">Otevřených</dt><dd class="font-medium sx-mono">{{ card.data.open_items|intcomma }}</dd></div>
+        <div class="flex justify-between"><dt class="sx-muted">Po termínu</dt><dd class="font-medium sx-mono">{{ card.data.overdue_items }}</dd></div>
+        <div class="flex justify-between"><dt class="sx-muted">Hotovo</dt><dd class="font-medium sx-mono">{{ card.data.completed_items|intcomma }}</dd></div>
+        <div class="flex justify-between"><dt class="sx-muted">Aktivit</dt><dd class="font-medium sx-mono">{{ card.data.activity_count|intcomma }}</dd></div>
+        {% if card.data.active_members %}
+          <div class="flex justify-between"><dt class="sx-muted">Aktivní členové</dt><dd class="font-medium sx-mono">{{ card.data.active_members }}</dd></div>
+        {% endif %}
+        <div class="flex justify-between"><dt class="sx-muted">Kvalita dat</dt><dd class="font-medium">{{ card.data.data_quality }}</dd></div>
+      </dl>
+    {% endif %}
+  </div>
+  {% if card.as_of %}<div class="text-[11px] sx-mute sx-mono mt-4">akt. {{ card.as_of|date:"H:i:s" }}</div>{% endif %}
+</div>

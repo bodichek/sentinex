@@ -1,14 +1,27 @@
 {% extends "app_shell.html" %}
 {% block title %}Insights — {{ request.tenant.name }}{% endblock %}
 {% block content %}
-<div class="mb-6">
-  <h1 class="text-2xl font-semibold text-gray-900">Insights</h1>
-  <p class="text-gray-500 mt-1 text-sm">Aktuální stav klíčových oblastí. Karty se obnovují bez reloadu stránky.</p>
+
+<div class="mb-6 flex items-end justify-between">
+  <div>
+    <div class="text-[11px] uppercase tracking-widest sx-mute sx-mono">Data layer</div>
+    <h1 class="sx-h1 mt-1">Insights</h1>
+    <p class="sx-muted text-sm mt-2 max-w-2xl">
+      Aktuální stav klíčových oblastí. Karty čtou nejnovější
+      <span class="sx-code">DataSnapshot</span> z relevantních konektorů a
+      přepínají se podle toho, co máš zapnuté (CRM, ESP, PM tool…).
+    </p>
+  </div>
+  <a href="{% url 'list_integrations' %}" class="sx-btn">Konektory</a>
 </div>
 
-<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<section class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
   <div id="card-finance">{% include "insights/_card_finance.html" with card=cards.finance %}</div>
   <div id="card-people">{% include "insights/_card_people.html" with card=cards.people %}</div>
   <div id="card-strategic">{% include "insights/_card_strategic.html" with card=cards.strategic %}</div>
-</div>
+  <div id="card-marketing">{% include "insights/_card_marketing.html" with card=cards.marketing %}</div>
+  <div id="card-sales">{% include "insights/_card_sales.html" with card=cards.sales %}</div>
+  <div id="card-projects">{% include "insights/_card_projects.html" with card=cards.projects %}</div>
+</section>
+
 {% endblock %}

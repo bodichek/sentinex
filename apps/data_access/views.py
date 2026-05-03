@@ -16,6 +16,9 @@ from django.views.decorators.http import require_POST
 from apps.core.middleware import require_admin, require_membership
 from apps.data_access.insight_functions import (
     get_cashflow_snapshot,
+    get_marketing_funnel,
+    get_pipeline_velocity,
+    get_project_throughput,
     get_team_activity_summary,
     get_weekly_metrics,
 )
@@ -103,15 +106,21 @@ def disconnect(request: HttpRequest, provider: str) -> HttpResponse:
 # ---------------------------------------------------------------------------
 
 _CARD_TEMPLATES = {
-    "finance": "insights/_card_finance.html",
-    "people": "insights/_card_people.html",
+    "finance":   "insights/_card_finance.html",
+    "people":    "insights/_card_people.html",
     "strategic": "insights/_card_strategic.html",
+    "marketing": "insights/_card_marketing.html",
+    "sales":     "insights/_card_sales.html",
+    "projects":  "insights/_card_projects.html",
 }
 
 _CARD_FETCHERS: dict[str, Any] = {
-    "finance": get_cashflow_snapshot,
-    "people": get_team_activity_summary,
+    "finance":   get_cashflow_snapshot,
+    "people":    get_team_activity_summary,
     "strategic": get_weekly_metrics,
+    "marketing": get_marketing_funnel,
+    "sales":     get_pipeline_velocity,
+    "projects":  get_project_throughput,
 }
 
 

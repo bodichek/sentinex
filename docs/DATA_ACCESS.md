@@ -88,33 +88,30 @@ def get_weekly_metrics(org: Organization) -> WeeklyMetrics:
 - `get_project_status(org, project_id) -> ProjectStatus`
 - `get_bottleneck_signals(org) -> list[Bottleneck]`
 
-**Marketing**
+**Marketing** — *source-agnostic across SmartEmailing / Ecomail / Mailchimp*
 - `get_marketing_funnel(period_days=30) -> MarketingFunnel`
 
-  Latest aggregated email-marketing performance from SmartEmailing.
-  Surfaces total contacts, active list count, delivered volume,
-  open-rate / CTR and the top-N campaigns. Reads the most recent
-  `DataSnapshot(source="smartemailing")`. Raises `InsufficientData`
-  when no snapshot exists yet. Backed by
-  `apps/data_access/insight_functions/marketing.py`.
+  Reads the most recent `DataSnapshot` whose source is in
+  `MARKETING_SOURCES = (smartemailing, ecomail, mailchimp)`. The
+  returned dataclass carries the chosen `source` so the dashboard
+  card can show *which* ESP fed the data.
 
-**Sales**
+**Sales** — *source-agnostic across Pipedrive / HubSpot / Salesforce / Raynet*
 - `get_pipeline_velocity(period_days=30) -> PipelineVelocity`
 
-  Latest pipeline velocity from Pipedrive: deal counts by status,
-  win-rate (`won / (won + lost)`), open-pipeline value, average open
-  deal size, activity completion rate, distribution by stage. Reads
-  the most recent `DataSnapshot(source="pipedrive")`. Backed by
-  `apps/data_access/insight_functions/sales.py`.
+  Reads the most recent `DataSnapshot` whose source is in
+  `CRM_SOURCES`. Each CRM emits slightly different keys ("deals" vs
+  "opportunities" vs "business_cases"; "by_status" vs "by_state";
+  "total_value" vs "total_amount") — `_extract` normalises the shape
+  and the function returns a single `PipelineVelocity` dataclass.
 
-**Projects / Delivery**
+**Projects / Delivery** — *source-agnostic across Trello / Asana / Jira / Basecamp*
 - `get_project_throughput(period_days=7) -> ProjectThroughput`
 
-  Latest delivery / PM activity from Trello: board count, card
-  totals (open / overdue / completed), action volume, active members,
-  top-N boards by activity. Reads the most recent
-  `DataSnapshot(source="trello")`. Backed by
-  `apps/data_access/insight_functions/projects.py`.
+  Reads the most recent `DataSnapshot` whose source is in
+  `PM_SOURCES`. Normalises board / card / task / issue counts plus
+  activity volume into one dataclass; the card surfaces the active
+  source name.
 
 **Knowledge (RAG over Workspace)**
 - `search_company_knowledge(query, top_k=8, source=None, owner_email=None)

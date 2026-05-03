@@ -1,7 +1,7 @@
-<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-5 h-full flex flex-col">
+<div class="sx-glass p-5 h-full flex flex-col">
   <div class="flex items-center justify-between">
     <div>
-      <div class="text-xs uppercase tracking-wide text-gray-400">Finance</div>
+      <div class="text-[11px] uppercase tracking-widest sx-mute sx-mono">Finance</div>
       <div class="text-lg font-semibold mt-1">Cashflow snapshot</div>
     </div>
     <button type="button"
@@ -9,26 +9,20 @@
             hx-target="#card-finance"
             hx-swap="innerHTML"
             hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
-            class="text-xs px-2.5 py-1 rounded border border-gray-300 hover:bg-gray-50 text-gray-700">
-      Refresh
-    </button>
+            class="sx-btn text-xs">Refresh</button>
   </div>
   <div class="mt-4 flex-1">
     {% if not card.ok %}
-      <div class="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded p-3">
-        Data nejsou dostupná: {{ card.error }}
-      </div>
+      <div class="text-xs sx-pill sx-pill-warn">{{ card.error }}</div>
     {% else %}
       <dl class="text-sm space-y-2">
-        <div class="flex justify-between"><dt class="text-gray-500">Cash on hand</dt><dd class="font-medium">{{ card.data.cash_on_hand }}</dd></div>
-        <div class="flex justify-between"><dt class="text-gray-500">Monthly revenue</dt><dd class="font-medium">{{ card.data.monthly_revenue }}</dd></div>
-        <div class="flex justify-between"><dt class="text-gray-500">Monthly expenses</dt><dd class="font-medium">{{ card.data.monthly_expenses }}</dd></div>
-        <div class="flex justify-between"><dt class="text-gray-500">Runway (měsíce)</dt><dd class="font-medium">{{ card.data.runway_months }}</dd></div>
-        <div class="flex justify-between"><dt class="text-gray-500">Kvalita dat</dt><dd class="font-medium">{{ card.data.data_quality }}</dd></div>
+        <div class="flex justify-between"><dt class="sx-muted">Cash on hand</dt><dd class="font-medium sx-mono">{{ card.data.cash_on_hand }}</dd></div>
+        <div class="flex justify-between"><dt class="sx-muted">Monthly revenue</dt><dd class="font-medium sx-mono">{{ card.data.monthly_revenue }}</dd></div>
+        <div class="flex justify-between"><dt class="sx-muted">Monthly expenses</dt><dd class="font-medium sx-mono">{{ card.data.monthly_expenses }}</dd></div>
+        <div class="flex justify-between"><dt class="sx-muted">Runway (měsíce)</dt><dd class="font-medium sx-mono">{{ card.data.runway_months }}</dd></div>
+        <div class="flex justify-between"><dt class="sx-muted">Kvalita dat</dt><dd class="font-medium">{{ card.data.data_quality }}</dd></div>
       </dl>
     {% endif %}
   </div>
-  {% if card.as_of %}
-  <div class="text-xs text-gray-400 mt-4">Aktualizováno: {{ card.as_of|date:"H:i:s" }}</div>
-  {% endif %}
+  {% if card.as_of %}<div class="text-[11px] sx-mute sx-mono mt-4">akt. {{ card.as_of|date:"H:i:s" }}</div>{% endif %}
 </div>
