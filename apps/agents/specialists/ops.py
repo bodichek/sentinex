@@ -29,10 +29,19 @@ class OpsSpecialist(BaseSpecialist):
     system_prompt_file = "ops_specialist"
     model = "sonnet"
 
+    # Tools the model can call before producing the final JSON verdict.
+    tool_names = (
+        "get_project_throughput",
+        "get_slack_activity",
+        "get_recent_anomalies",
+    )
+
     def analyze(self, context: AgentContext) -> SpecialistResponse:
         base = self._default_analyze(context)
         analysis = self._parse(base.content)
-        structured = analysis.model_dump() if analysis is not None else {}
+        structured = dict(base.structured_data or {})
+        if analysis is not None:
+            structured["analysis"] = analysis.model_dump()
         confidence = analysis.confidence if analysis is not None else 0.0
         return SpecialistResponse(
             name=self.name,

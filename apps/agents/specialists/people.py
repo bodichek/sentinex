@@ -28,10 +28,20 @@ class PeopleSpecialist(BaseSpecialist):
     system_prompt_file = "people_specialist"
     model = "sonnet"
 
+    # Tools the model can call before producing the final JSON verdict.
+    tool_names = (
+        "get_team_activity_summary",
+        "get_slack_activity",
+        "get_upcoming_commitments",
+    )
+
     def analyze(self, context: AgentContext) -> SpecialistResponse:
         base = self._default_analyze(context)
         analysis = self._parse(base.content)
-        structured = analysis.model_dump() if analysis is not None else {}
+        # Merge the JSON verdict with the tool-call trace so callers see both.
+        structured = dict(base.structured_data or {})
+        if analysis is not None:
+            structured["analysis"] = analysis.model_dump()
         confidence = analysis.confidence if analysis is not None else 0.0
         return SpecialistResponse(
             name=self.name,

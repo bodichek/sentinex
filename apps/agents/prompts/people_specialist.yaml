@@ -11,8 +11,17 @@ system: |
   the missing signal rather than speculating. Default to Czech unless
   the query is in another language.
 
-  Respond with a single JSON object (no prose, no markdown fence) with
-  exactly these keys:
+  You have tools available — call them first to ground your verdict in
+  real numbers. Recommended order:
+    1. get_team_activity_summary — calendar / e-mail load over the last 7 days
+    2. get_slack_activity — channel + DM volume, active users
+    3. get_upcoming_commitments — what's scheduled in the next week
+  Skip any tool that obviously isn't relevant to the question. If a
+  tool returns ``{"ok": false, "error": "insufficient_data"}`` say so
+  in ``risks`` rather than ignoring it.
+
+  After you have the data you need, respond with a single JSON object
+  (no prose, no markdown fence) with exactly these keys:
     - capacity_score: float in [0.0, 1.0] — team headroom (1.0 = healthy)
     - hiring_health: one of "healthy" | "at_risk" | "critical"
     - risks: array of short strings (≤12 words each)

@@ -67,9 +67,12 @@ def send_message(request: HttpRequest, conversation_id: UUID) -> HttpResponse:
         conversation.title = _title_from(content)
     conversation.save(update_fields=["title", "updated_at"])
 
-    assistant_text = _run_agent(content, conversation)
+    assistant_text, metadata = _run_agent(content, conversation)
     Message.objects.create(
-        conversation=conversation, role=Message.ROLE_ASSISTANT, content=assistant_text
+        conversation=conversation,
+        role=Message.ROLE_ASSISTANT,
+        content=assistant_text,
+        metadata=metadata,
     )
     conversation.save(update_fields=["updated_at"])
     return redirect("chat:detail", conversation_id=conversation.id)
@@ -85,7 +88,12 @@ def _title_from(text: str) -> str:
     return " ".join(words)[:200] or "Nový chat"
 
 
-def _run_agent(query: str, conversation: Conversation) -> str:
+def _run_agent(query: str, conversation: Conversation) -> tuple[str, dict]:
+    """Run orchestrator and return (text, metadata).
+
+    metadata captures intent + per-specialist tool-call traces so the
+    UI can show what the agent looked up before answering.
+    """
     try:
         history = list(conversation.messages.order_by("-created_at")[:CONTEXT_WINDOW])
         history.reverse()
@@ -114,7 +122,24 @@ def _run_agent(query: str, conversation: Conversation) -> str:
         )
 
         response = orchestrator.handle(query, ctx)
-        return response.final or ERROR_FALLBACK
+        metadata = {
+            "intent": {
+                "intent": response.intent.intent,
+                "summary": response.intent.summary,
+                "specialists": response.intent.required_specialists,
+            },
+            "specialists": [
+                {
+                    "name": sr.name,
+                    "confidence": sr.confidence,
+                    "content": sr.content,
+                    "tool_calls": (sr.structured_data or {}).get("tool_calls", []),
+                    "iterations": (sr.structured_data or {}).get("iterations"),
+                }
+                for sr in response.specialist_responses
+            ],
+        }
+        return response.final or ERROR_FALLBACK, metadata
     except Exception:
         logger.exception("orchestrator failed in chat send_message")
-        return ERROR_FALLBACK
+        return ERROR_FALLBACK, {"error": "orchestrator_failed"}

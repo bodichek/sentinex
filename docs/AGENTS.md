@@ -236,8 +236,18 @@ Currently opted-in:
 |---|---|
 | `StrategicSpecialist` | weekly_metrics, recent_anomalies, team_activity_summary, cashflow, marketing_funnel, pipeline_velocity, project_throughput, search_company_knowledge |
 | `FinanceSpecialist` | cashflow, marketing_funnel, pipeline_velocity |
-| `KnowledgeSpecialist` | manages its own RAG retrieval directly (skips tool-use) |
-| `PeopleSpecialist`, `OpsSpecialist` | not yet — their prompts still expect strict JSON output and would need a revision to coexist with tool-use. |
+| `PeopleSpecialist` | team_activity_summary, slack_activity, upcoming_commitments. **Hybrid mode** — prompt instructs the model to call tools first, then return the strict-JSON `PeopleAnalysis` verdict. Verdict lands in `structured_data["analysis"]`; tool trace in `structured_data["tool_calls"]`. |
+| `OpsSpecialist` | project_throughput, slack_activity, recent_anomalies. Same hybrid pattern — JSON verdict in `structured_data["analysis"]`. |
+| `KnowledgeSpecialist` | manages its own RAG retrieval directly (skips tool-use). |
+
+### Chat UI
+
+`/chat/` persists the orchestrator's intent + each specialist's
+tool-call trace into `Message.metadata` (JSONField). The chat detail
+template renders an expandable section under each assistant bubble
+showing which specialists ran, how many tool-use iterations each took,
+and the exact tool call sequence. Users see the model's reasoning
+audit-trail without leaving the conversation thread.
 
 ## Agent Execution Flow
 

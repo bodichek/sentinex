@@ -9,20 +9,21 @@ from unittest.mock import patch
 import pytest
 
 from apps.agents.base import AgentContext
-from apps.agents.llm_gateway import LLMResponse
+from apps.agents.llm_gateway import ToolUseResponse
 from apps.agents.specialists import REGISTRY, PeopleSpecialist
 from apps.agents.specialists.people import PeopleAnalysis
 
 
-def _mk_response(content: str) -> LLMResponse:
-    return LLMResponse(
+def _mk_tool_response(content: str) -> ToolUseResponse:
+    return ToolUseResponse(
         content=content,
         model="claude-haiku-4-5-20251001",
         input_tokens=10,
         output_tokens=5,
         cost_czk=Decimal("0"),
-        cached=False,
         latency_ms=0,
+        iterations=1,
+        tool_calls=[],
     )
 
 
@@ -37,11 +38,14 @@ class TestPeopleSpecialist:
             "confidence": 0.7,
         }
         ctx = AgentContext(query="Jak na tom je tým?")
-        with patch("apps.agents.base.complete", return_value=_mk_response(json.dumps(payload))):
+        with patch(
+            "apps.agents.base.complete_with_tools",
+            return_value=_mk_tool_response(json.dumps(payload)),
+        ):
             resp = PeopleSpecialist().analyze(ctx)
 
         assert resp.name == "people"
-        analysis = PeopleAnalysis.model_validate(resp.structured_data)
+        analysis = PeopleAnalysis.model_validate(resp.structured_data["analysis"])
         assert analysis.capacity_score == pytest.approx(0.62)
         assert analysis.hiring_health == "at_risk"
         assert len(analysis.risks) == 2

@@ -4,46 +4,81 @@
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
 
 <div class="mb-4 flex items-center justify-between">
-  <a href="{% url 'chat:list' %}" class="text-sm text-blue-600 hover:underline">← Zpět na konverzace</a>
-  <h1 class="text-lg font-semibold text-gray-900 truncate max-w-md">
-    {{ conversation.title|default:"Nový chat" }}
-  </h1>
+  <a href="{% url 'chat:list' %}" class="sx-link text-sm flex items-center gap-1">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+    zpět na konverzace
+  </a>
+  <h1 class="sx-h1 truncate max-w-md text-base">{{ conversation.title|default:"Nový chat" }}</h1>
 </div>
 
-<div class="bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col"
+<div class="sx-glass-strong flex flex-col"
      style="height: calc(100vh - 220px);"
      x-data="chatRoom()" x-init="scrollToBottom()">
+
   <div class="flex-1 overflow-y-auto px-5 py-4 space-y-4" x-ref="thread">
     {% for m in chat_messages %}
       {% if m.role == 'user' %}
         <div class="flex justify-end">
-          <div class="max-w-[80%] bg-blue-600 text-white rounded-lg px-4 py-2 text-sm whitespace-pre-wrap">{{ m.content }}</div>
+          <div class="max-w-[80%] rounded-xl px-4 py-2 text-sm whitespace-pre-wrap"
+               style="background: linear-gradient(135deg, rgba(0,229,255,0.18), rgba(167,139,250,0.18)); border: 1px solid rgba(0,229,255,0.30); color: var(--sx-text);">
+            {{ m.content }}
+          </div>
         </div>
       {% else %}
-        <div class="flex justify-start">
-          <div class="max-w-[80%] bg-gray-100 text-gray-900 rounded-lg px-4 py-2 text-sm prose prose-sm"
-               x-init="$el.innerHTML = (window.marked ? marked.parse($el.dataset.raw) : $el.dataset.raw)"
-               data-raw="{{ m.content }}">{{ m.content }}</div>
+        <div class="flex justify-start" x-data="{ open: false }">
+          <div class="max-w-[85%] flex flex-col gap-2">
+            <div class="sx-glass rounded-xl px-4 py-2 text-sm prose prose-invert prose-sm"
+                 x-init="$el.innerHTML = (window.marked ? marked.parse($el.dataset.raw) : $el.dataset.raw)"
+                 data-raw="{{ m.content }}">{{ m.content }}</div>
+
+            {% if m.metadata.specialists %}
+              <div class="text-[11px] sx-mute sx-mono">
+                <button type="button" @click="open = !open"
+                        class="inline-flex items-center gap-1 hover:text-cyan-300">
+                  <span x-text="open ? '▾' : '▸'"></span>
+                  <span>{{ m.metadata.specialists|length }} specialist{{ m.metadata.specialists|length|pluralize:",s" }}</span>
+                  {% with intent=m.metadata.intent %}
+                    {% if intent.intent %}<span>· {{ intent.intent }}</span>{% endif %}
+                  {% endwith %}
+                </button>
+                <div x-show="open" x-cloak class="mt-2 space-y-2">
+                  {% for sp in m.metadata.specialists %}
+                    <div class="border-l-2 pl-3" style="border-color: rgba(0,229,255,0.30);">
+                      <div class="text-cyan-300">{{ sp.name }}{% if sp.iterations %} <span class="sx-mute">({{ sp.iterations }} iter)</span>{% endif %}</div>
+                      {% for tc in sp.tool_calls %}
+                        <div class="ml-2 mt-1">
+                          <span class="text-violet-300">→ {{ tc.name }}</span>
+                          {% if tc.arguments %}<span class="sx-mute">({% for k, v in tc.arguments.items %}{{ k }}={{ v }}{% if not forloop.last %}, {% endif %}{% endfor %})</span>{% endif %}
+                        </div>
+                      {% empty %}
+                        <div class="ml-2 sx-mute">— bez tool callů</div>
+                      {% endfor %}
+                    </div>
+                  {% endfor %}
+                </div>
+              </div>
+            {% endif %}
+          </div>
         </div>
       {% endif %}
     {% empty %}
-      <div class="text-center text-sm text-gray-400 py-12">
-        Začněte konverzaci napsáním zprávy níže.
+      <div class="text-center sx-mute text-sm py-12">
+        Začni konverzaci. Můžeš se zeptat třeba <em>„Jak nám jde sales tento měsíc?"</em>
       </div>
     {% endfor %}
   </div>
 
   <form method="post" action="{% url 'chat:send_message' conversation.id %}"
-        class="border-t border-gray-200 p-3 flex gap-2"
+        class="p-3 flex gap-2" style="border-top: 1px solid var(--sx-border);"
         @submit="submitting = true">
     {% csrf_token %}
     <textarea name="content" rows="2" required
               :disabled="submitting"
-              placeholder="Napište zprávu… (Enter odešle, Shift+Enter = nový řádek)"
+              placeholder="Napiš zprávu… (Enter odešle, Shift+Enter = nový řádek)"
               @keydown.enter.prevent="if (!$event.shiftKey) { $event.target.form.requestSubmit() } else { $event.target.value += '\n' }"
-              class="flex-1 resize-none rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"></textarea>
+              class="sx-input flex-1 resize-none disabled:opacity-60"></textarea>
     <button type="submit" :disabled="submitting"
-            class="px-4 py-2 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-60 flex items-center gap-2">
+            class="sx-btn sx-btn-primary disabled:opacity-60 self-end">
       <svg x-show="submitting" x-cloak class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
         <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25"></circle>
         <path d="M4 12a8 8 0 018-8" stroke="currentColor" stroke-width="4" class="opacity-75"></path>
