@@ -164,10 +164,11 @@ Thin wrapper over LLM provider SDKs.
 Responsibilities:
 - Model routing (Sonnet vs Haiku based on task complexity)
 - Token counting per tenant
-- Caching (Redis exact-match on prompt hash)
+- Caching (Redis exact-match on prompt hash) — single-shot only
 - Retry logic (exponential backoff on rate limits)
 - Error handling and fallback
 - Telemetry (latency, cost, success rate)
+- **Tool-use loop** (`complete_with_tools`) for agentic specialists
 
 Implementation: `apps/agents/llm_gateway.py`.
 
@@ -175,6 +176,68 @@ Rules:
 - No LLM call should bypass the gateway
 - All direct Anthropic SDK usage is forbidden outside the gateway
 - Gateway is the only place where `ANTHROPIC_API_KEY` is used
+
+#### `complete_with_tools` — multi-turn tool-use loop
+
+1. Send `messages=[user]` + `tools=[...]` to Anthropic.
+2. If the response contains `tool_use` blocks, execute each via the
+   caller-supplied `invoke(name, arguments)` callable, append
+   `tool_result` blocks as a `user` message and loop.
+3. Stop when `stop_reason == "end_turn"` or after `max_iterations`
+   (default 6) — whichever comes first.
+4. Token counts and CZK cost are summed across every upstream call;
+   one rolled-up `LLMUsage` row is written so cost dashboards stay
+   accurate. Tool-use sessions are intentionally **not cached** because
+   tool outputs are inherently dynamic.
+
+The return value (`ToolUseResponse`) carries the final assistant text,
+the full `tool_calls` trace (name + arguments + JSON-string result) and
+total iterations.
+
+### Tool registry
+
+`apps/agents/tools.py` bridges the Agent Layer to the Data Access Layer.
+Every entry maps a model-facing name to:
+
+- **description** — short English explanation the model reads at
+  routing time.
+- **input_schema** — JSON Schema of the kwargs the underlying insight
+  function takes (defaults match the Python signature, so the model
+  can call the tool with no arguments).
+- **invoke** — `_wrap`-ed callable that runs the insight function,
+  serialises dataclass results into plain dicts, and returns a
+  uniform `{ok, data | error, reason}` shape. `InsufficientData` is
+  mapped to `{ok: false, error: "insufficient_data", ...}` so the
+  model can recover gracefully ("I don't have data yet — please
+  connect a CRM").
+
+Public API:
+
+- `anthropic_tool_specs(names)` — Anthropic-shaped list for given names.
+- `invoke_tool(name, arguments)` — runs the tool, returns a JSON string.
+
+### Specialist tool-use opt-in
+
+`BaseSpecialist` exposes two class attributes:
+
+- `tool_names: tuple[str, ...]` — registered tools the specialist may
+  call. Empty (default) ⇒ single-shot `complete()`.
+- `max_tool_iterations: int = 6` — upper bound on loop iterations.
+
+When `tool_names` is non-empty, `_default_analyze` switches to
+`complete_with_tools`. The returned `SpecialistResponse.structured_data`
+contains the full tool-call trace plus `iterations`, model name and
+token totals — so the orchestrator and the compliance log see exactly
+which insight functions ran.
+
+Currently opted-in:
+
+| Specialist | Tool set |
+|---|---|
+| `StrategicSpecialist` | weekly_metrics, recent_anomalies, team_activity_summary, cashflow, marketing_funnel, pipeline_velocity, project_throughput, search_company_knowledge |
+| `FinanceSpecialist` | cashflow, marketing_funnel, pipeline_velocity |
+| `KnowledgeSpecialist` | manages its own RAG retrieval directly (skips tool-use) |
+| `PeopleSpecialist`, `OpsSpecialist` | not yet — their prompts still expect strict JSON output and would need a revision to coexist with tool-use. |
 
 ## Agent Execution Flow
 

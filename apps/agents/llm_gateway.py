@@ -220,6 +220,157 @@ def complete(
     return response
 
 
+# ---------------------------------------------------------------------------
+# Tool-use loop — single-shot completion that lets the model call tools
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class ToolCall:
+    name: str
+    arguments: dict[str, Any]
+    result: str  # JSON-string returned to the model
+
+
+@dataclass(frozen=True)
+class ToolUseResponse:
+    content: str
+    model: str
+    input_tokens: int
+    output_tokens: int
+    cost_czk: Decimal
+    latency_ms: int
+    iterations: int
+    tool_calls: list[ToolCall] = field(default_factory=list)
+
+
+def complete_with_tools(
+    prompt: str,
+    *,
+    tools: list[dict[str, Any]],
+    invoke: Any,
+    model: str = "sonnet",
+    system: str | None = None,
+    temperature: float = 0.3,
+    max_tokens: int = 4096,
+    max_iterations: int = 6,
+    tenant: Tenant | None = None,
+) -> ToolUseResponse:
+    """Run a multi-turn tool-use loop.
+
+    The Anthropic SDK is called with ``tools=...`` so the model can either
+    answer directly or emit ``tool_use`` blocks. We execute each tool via
+    ``invoke(name, arguments)``, feed the JSON-string result back as a
+    ``tool_result`` and loop until ``stop_reason`` is ``end_turn`` or the
+    iteration cap is hit. Token counts and CZK cost are summed across all
+    upstream calls; results are *not* cached because tool responses are
+    inherently dynamic.
+    """
+    resolved = resolve_model(model)
+    client = _get_client()
+
+    messages: list[dict[str, Any]] = [{"role": "user", "content": prompt}]
+    tool_calls: list[ToolCall] = []
+    total_in = 0
+    total_out = 0
+    total_cost = Decimal("0")
+    final_text = ""
+    stop = "end_turn"
+
+    started = time.monotonic()
+    iterations = 0
+    for iterations in range(1, max_iterations + 1):
+        kwargs: dict[str, Any] = {
+            "model": resolved,
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+            "messages": messages,
+            "tools": tools,
+        }
+        if system:
+            kwargs["system"] = system
+        try:
+            message = client.messages.create(**kwargs)
+        except AuthenticationError as exc:
+            raise LLMAuthError(str(exc)) from exc
+        except RateLimitError as exc:
+            raise LLMRateLimitError(str(exc)) from exc
+        except (APIConnectionError, APIStatusError) as exc:
+            raise LLMUnavailableError(str(exc)) from exc
+
+        total_in += message.usage.input_tokens
+        total_out += message.usage.output_tokens
+        total_cost += compute_cost_czk(
+            resolved, message.usage.input_tokens, message.usage.output_tokens
+        )
+        stop = str(message.stop_reason or "end_turn")
+
+        assistant_blocks: list[dict[str, Any]] = []
+        text_chunks: list[str] = []
+        tool_uses: list[Any] = []
+        for block in message.content:
+            if block.type == "text":
+                assistant_blocks.append({"type": "text", "text": block.text})
+                text_chunks.append(block.text)
+            elif block.type == "tool_use":
+                assistant_blocks.append(
+                    {
+                        "type": "tool_use",
+                        "id": block.id,
+                        "name": block.name,
+                        "input": block.input or {},
+                    }
+                )
+                tool_uses.append(block)
+
+        final_text = "".join(text_chunks).strip()
+        messages.append({"role": "assistant", "content": assistant_blocks})
+
+        if stop != "tool_use" or not tool_uses:
+            break
+
+        tool_result_blocks: list[dict[str, Any]] = []
+        for tu in tool_uses:
+            args = tu.input or {}
+            payload = invoke(tu.name, args)
+            tool_calls.append(ToolCall(name=tu.name, arguments=args, result=payload))
+            tool_result_blocks.append(
+                {
+                    "type": "tool_result",
+                    "tool_use_id": tu.id,
+                    "content": payload,
+                }
+            )
+        messages.append({"role": "user", "content": tool_result_blocks})
+
+    latency_ms = int((time.monotonic() - started) * 1000)
+
+    composite = LLMResponse(
+        content=final_text,
+        model=resolved,
+        input_tokens=total_in,
+        output_tokens=total_out,
+        cost_czk=total_cost,
+        cached=False,
+        latency_ms=latency_ms,
+        stop_reason=stop,
+    )
+    digest = hashlib.sha256(prompt.encode("utf-8")).hexdigest()
+    _record_usage(composite, tenant, f"llm:{digest}")
+    _emit_llm_event(composite, tenant)
+
+    return ToolUseResponse(
+        content=final_text,
+        model=resolved,
+        input_tokens=total_in,
+        output_tokens=total_out,
+        cost_czk=total_cost,
+        latency_ms=latency_ms,
+        iterations=iterations,
+        tool_calls=tool_calls,
+    )
+
+
 def _emit_llm_event(response: LLMResponse, tenant: Tenant | None) -> None:
     czk_per_usd = float(getattr(settings, "USD_TO_CZK", 24.0)) or 24.0
     cost_usd = float(response.cost_czk) / czk_per_usd if response.cost_czk else 0.0
