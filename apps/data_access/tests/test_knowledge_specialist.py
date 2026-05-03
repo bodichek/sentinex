@@ -15,14 +15,15 @@ from apps.data_access.insight_functions.knowledge import KnowledgeAnswerContext
 def fake_llm_response():  # type: ignore[no-untyped-def]
     from apps.agents.llm_gateway import LLMResponse
 
+    from decimal import Decimal
+
     return LLMResponse(
         content="Stručná odpověď s citací [1].",
         model="claude-sonnet-4",
         input_tokens=100,
         output_tokens=20,
-        cost_usd=0.001,
-        cost_czk=0.024,
-        cache_hit=False,
+        cost_czk=Decimal("0.024"),
+        cached=False,
         latency_ms=500,
     )
 
@@ -55,7 +56,7 @@ def test_specialist_calls_llm_with_retrieved_context(fake_llm_response) -> None:
         prompt_context="[1] Strategy.gdoc — https://drive/x\nCenotvorba 2026 ...",
     )
     with patch(
-        "apps.agents.specialists.knowledge.search_company_knowledge",
+        "apps.data_access.insight_functions.knowledge.search_company_knowledge",
         return_value=hits_ctx,
     ), patch(
         "apps.agents.specialists.knowledge.complete", return_value=fake_llm_response

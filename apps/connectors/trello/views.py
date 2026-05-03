@@ -8,6 +8,11 @@ from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from apps.connectors._setup import (
+    clear_setup_attempt,
+    last_setup_context,
+    record_setup_attempt,
+)
 from apps.connectors.trello.client import TrelloClient
 from apps.core.middleware import require_admin, require_membership
 from apps.data_access.models import Credential, Integration
@@ -21,7 +26,7 @@ def setup(request: HttpRequest) -> HttpResponse:
     return render(
         request,
         "connectors/trello_setup.html",
-        {"integration": integration},
+        {"integration": integration, **last_setup_context(integration)},
     )
 
 
@@ -32,15 +37,21 @@ def setup(request: HttpRequest) -> HttpResponse:
 def save_credentials(request: HttpRequest) -> HttpResponse:
     api_key = (request.POST.get("api_key") or "").strip()
     token = (request.POST.get("token") or "").strip()
+    integration, _ = Integration.objects.get_or_create(provider="trello")
+
     if not api_key or not token:
+        record_setup_attempt(integration, fields={}, error="Vyplň API key i token.")
         return render(
             request,
             "connectors/trello_setup.html",
-            {"error": "Vyplň API key i token."},
+            {
+                "integration": integration,
+                "error": "Vyplň API key i token.",
+                **last_setup_context(integration),
+            },
             status=400,
         )
 
-    integration, _ = Integration.objects.get_or_create(provider="trello")
     credential, _ = Credential.objects.get_or_create(integration=integration)
     credential.set_tokens({"api_key": api_key, "token": token})
     credential.save()
@@ -49,13 +60,19 @@ def save_credentials(request: HttpRequest) -> HttpResponse:
         with TrelloClient(integration) as client:
             client.me()
     except Exception as exc:
+        record_setup_attempt(integration, fields={}, error=f"Ověření selhalo: {exc}")
         return render(
             request,
             "connectors/trello_setup.html",
-            {"error": f"Ověření selhalo: {exc}"},
+            {
+                "integration": integration,
+                "error": f"Ověření selhalo: {exc}",
+                **last_setup_context(integration),
+            },
             status=400,
         )
 
+    clear_setup_attempt(integration)
     integration.is_active = True
     integration.connected_at = timezone.now()  # type: ignore[assignment]
     integration.save(update_fields=["is_active", "connected_at"])

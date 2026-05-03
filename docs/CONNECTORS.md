@@ -166,6 +166,32 @@ All Group C connectors use a 3-step Google-consent-style wizard at
 (2) how to generate it, (3) paste form — the wizard pings the upstream
 API before activating the integration.
 
+#### Retry contract for paste-key wizards
+
+When a paste-key save fails (validation error or upstream ping
+rejection), the view records a structured ``last_setup`` summary into
+``Integration.meta`` so the wizard can render an ISO-timestamped error
+banner on the next page load. **Non-secret** form values
+(`username`, `instance`, `e-mail`, `user`) are echoed back into the
+form so the user does not have to re-paste; secrets (`api_key`,
+`token`, `api_token`) are never persisted to meta and never echoed.
+
+The retry banner offers a `Začít znovu` button that POSTs to the
+shared ``reset_setup`` URL (`/integrations/<provider>/reset/`) — that
+clears the `last_setup` record and flips `is_active=False` so the user
+can start the wizard over with a clean slate. Encrypted credentials in
+`Credential.encrypted_tokens` are intentionally **not** wiped, so a
+working install can never be accidentally destroyed via the reset
+button alone (use `disconnect` for that).
+
+Implementation lives in `apps/connectors/_setup.py` and
+`templates/connectors/_retry_banner.html`. Adding a new paste-key
+connector follows the same pattern: import
+`record_setup_attempt`, `clear_setup_attempt`, `last_setup_context`
+from `apps.connectors._setup`, call them in your `save_credentials`
+view on each branch, include the `_retry_banner.html` partial in your
+setup template with `provider="<your_name>"`.
+
 ## Roadmap — planned connectors
 
 Verified during research (2026‑04). Status legend: ✅ shipped · 🟡 planned ·

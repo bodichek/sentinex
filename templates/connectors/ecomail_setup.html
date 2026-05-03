@@ -16,6 +16,7 @@
       {% if integration.is_active %}<span class="sx-pill sx-pill-on">●&nbsp;Aktivní</span>{% else %}<span class="sx-pill">○&nbsp;Nepřipojeno</span>{% endif %}
     </div>
     {% if error %}<div class="mb-6 p-3 rounded-lg border border-red-400/40 bg-red-500/10 text-red-200 text-sm">{{ error }}</div>{% endif %}
+    {% include "connectors/_retry_banner.html" with provider="ecomail" %}
     <ol class="space-y-4">
       <li class="p-5 rounded-lg sx-glass">
         <div class="flex items-start gap-3"><span class="sx-step-dot" style="border-color: var(--sx-success); color: var(--sx-success);">1</span>

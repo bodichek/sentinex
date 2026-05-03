@@ -16,6 +16,7 @@
       {% if integration.is_active %}<span class="sx-pill sx-pill-on">●&nbsp;Aktivní</span>{% else %}<span class="sx-pill">○&nbsp;Nepřipojeno</span>{% endif %}
     </div>
     {% if error %}<div class="mb-6 p-3 rounded-lg border border-red-400/40 bg-red-500/10 text-red-200 text-sm">{{ error }}</div>{% endif %}
+    {% include "connectors/_retry_banner.html" with provider="fapi" %}
     <ol class="space-y-4">
       <li class="p-5 rounded-lg sx-glass">
         <div class="flex items-start gap-3"><span class="sx-step-dot" style="border-color: var(--sx-success); color: var(--sx-success);">1</span>
@@ -31,7 +32,8 @@
         <div class="flex items-start gap-3"><span class="sx-step-dot" style="border-color: var(--sx-accent); color: var(--sx-accent); box-shadow: 0 0 0 3px rgba(0,229,255,0.10);">3</span>
           <div class="flex-1"><div class="font-medium">Vlož údaje</div>
             <form method="post" action="{% url 'connectors_fapi:save' %}" class="mt-4 space-y-4">{% csrf_token %}
-              <div><label class="block text-xs uppercase tracking-widest sx-mute sx-mono mb-1.5">User (e‑mail účtu)</label><input name="user" type="text" required class="sx-input" placeholder="ucet@firma.cz"></div>
+              <div><label class="block text-xs uppercase tracking-widest sx-mute sx-mono mb-1.5">User (e‑mail účtu)</label><input name="user" type="text" required class="sx-input"
+                       value="{{ last_fields.user|default:'' }}" placeholder="ucet@firma.cz"></div>
               <div><label class="block text-xs uppercase tracking-widest sx-mute sx-mono mb-1.5">API klíč</label><input name="api_key" type="password" required class="sx-input" placeholder="••••"></div>
               <div class="flex gap-3 pt-2"><button class="sx-btn sx-btn-primary">Uložit a ověřit</button><a href="{% url 'list_integrations' %}" class="sx-btn sx-btn-ghost">Zrušit</a></div>
             </form>

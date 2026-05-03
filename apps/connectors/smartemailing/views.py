@@ -8,6 +8,11 @@ from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from apps.connectors._setup import (
+    clear_setup_attempt,
+    last_setup_context,
+    record_setup_attempt,
+)
 from apps.connectors.smartemailing.client import SmartEmailingClient
 from apps.core.middleware import require_admin, require_membership
 from apps.data_access.models import Credential, Integration
@@ -21,7 +26,7 @@ def setup(request: HttpRequest) -> HttpResponse:
     return render(
         request,
         "connectors/smartemailing_setup.html",
-        {"integration": integration},
+        {"integration": integration, **last_setup_context(integration)},
     )
 
 
@@ -32,31 +37,46 @@ def setup(request: HttpRequest) -> HttpResponse:
 def save_credentials(request: HttpRequest) -> HttpResponse:
     username = (request.POST.get("username") or "").strip()
     api_key = (request.POST.get("api_key") or "").strip()
+    integration, _ = Integration.objects.get_or_create(provider="smartemailing")
+
     if not username or not api_key:
+        record_setup_attempt(
+            integration, fields={"username": username}, error="Vyplň username i API key."
+        )
         return render(
             request,
             "connectors/smartemailing_setup.html",
-            {"error": "Vyplň username i API key."},
+            {
+                "integration": integration,
+                "error": "Vyplň username i API key.",
+                **last_setup_context(integration),
+            },
             status=400,
         )
 
-    integration, _ = Integration.objects.get_or_create(provider="smartemailing")
     credential, _ = Credential.objects.get_or_create(integration=integration)
     credential.set_tokens({"username": username, "api_key": api_key})
     credential.save()
 
-    # Verify by pinging the API.
     try:
         with SmartEmailingClient(integration) as client:
             client.ping()
     except Exception as exc:
+        record_setup_attempt(
+            integration, fields={"username": username}, error=f"Ověření selhalo: {exc}"
+        )
         return render(
             request,
             "connectors/smartemailing_setup.html",
-            {"error": f"Ověření selhalo: {exc}"},
+            {
+                "integration": integration,
+                "error": f"Ověření selhalo: {exc}",
+                **last_setup_context(integration),
+            },
             status=400,
         )
 
+    clear_setup_attempt(integration)
     integration.is_active = True
     integration.connected_at = timezone.now()  # type: ignore[assignment]
     integration.save(update_fields=["is_active", "connected_at"])

@@ -101,6 +101,28 @@ def disconnect(request: HttpRequest, provider: str) -> HttpResponse:
     return redirect("list_integrations")
 
 
+@login_required
+@require_membership
+@require_admin
+@require_POST
+def reset_setup(request: HttpRequest, provider: str) -> HttpResponse:
+    """Clear the saved ``last_setup`` banner for a paste-key connector.
+
+    Lets a tenant admin start the wizard over with a clean slate after a
+    failed attempt — drops the persisted error + echoed form fields and
+    deactivates the integration. Credentials in ``Credential.encrypted_tokens``
+    are left intact so a working install isn't accidentally wiped.
+    """
+    integration = Integration.objects.filter(provider=provider).first()
+    if integration is not None:
+        meta = dict(integration.meta or {})
+        meta.pop("last_setup", None)
+        integration.meta = meta
+        integration.is_active = False
+        integration.save(update_fields=["meta", "is_active"])
+    return redirect(f"/integrations/{provider}/setup/")
+
+
 # ---------------------------------------------------------------------------
 # Insights dashboard (3 cards: Finance / People / Strategic)
 # ---------------------------------------------------------------------------

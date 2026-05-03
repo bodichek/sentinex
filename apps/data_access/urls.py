@@ -17,6 +17,7 @@ urlpatterns = [
         name="google_workspace_callback",
     ),
     path("<str:provider>/disconnect/", views.disconnect, name="disconnect_integration"),
+    path("<str:provider>/reset/", views.reset_setup, name="reset_setup"),
     path(
         "google_workspace_dwd/setup/",
         views.workspace_dwd_setup,

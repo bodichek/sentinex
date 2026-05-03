@@ -37,6 +37,7 @@
     {% if error %}
       <div class="mb-6 p-3 rounded-lg border border-red-400/40 bg-red-500/10 text-red-200 text-sm">{{ error }}</div>
     {% endif %}
+    {% include "connectors/_retry_banner.html" with provider="trello" %}
 
     <div class="mb-6 p-4 rounded-lg sx-glass">
       <div class="text-[11px] uppercase tracking-widest sx-mute sx-mono mb-2">Sentinex bude moci</div>
