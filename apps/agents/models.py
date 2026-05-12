@@ -108,3 +108,41 @@ class MemoryEmbedding(models.Model):
 
     def __str__(self) -> str:
         return f"{self.source}:{str(self.id)[:8]} {self.content[:50]}"
+
+
+class AgentRun(models.Model):
+    """Tenant-scoped record of a single LangGraph agent invocation."""
+
+    STATUS_PENDING = "pending"
+    STATUS_RUNNING = "running"
+    STATUS_SUCCEEDED = "succeeded"
+    STATUS_FAILED = "failed"
+    STATUS_CHOICES: ClassVar[list[tuple[str, str]]] = [
+        (STATUS_PENDING, "Pending"),
+        (STATUS_RUNNING, "Running"),
+        (STATUS_SUCCEEDED, "Succeeded"),
+        (STATUS_FAILED, "Failed"),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    agent_type = models.CharField(max_length=64, db_index=True)
+    session_id = models.CharField(max_length=128, db_index=True)
+    user_id = models.IntegerField(null=True, blank=True)
+    status = models.CharField(max_length=16, choices=STATUS_CHOICES, default=STATUS_PENDING)
+    input = models.JSONField(default=dict, blank=True)
+    output = models.JSONField(default=dict, blank=True)
+    trace_id = models.CharField(max_length=128, blank=True)
+    error = models.TextField(blank=True)
+    created_at: models.DateTimeField[None, None] = models.DateTimeField(auto_now_add=True)
+    finished_at: models.DateTimeField[None, None] = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        app_label = "agents"
+        ordering: ClassVar[list[str]] = ["-created_at"]
+        indexes: ClassVar[list[models.Index]] = [
+            models.Index(fields=["agent_type", "-created_at"]),
+            models.Index(fields=["session_id", "-created_at"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.agent_type} [{self.status}] {self.id}"

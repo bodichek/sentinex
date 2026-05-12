@@ -452,3 +452,116 @@ This re-runs the conversation without actually calling LLMs, using stored respon
 - Self-reflection (agent critiquing its own output)
 - On-premise LLM support (Qwen, Llama via vLLM)
 - Semantic caching (beyond exact-match)
+
+## LangGraph orchestration (prompt 13)
+
+Concrete agent workflows live in `apps/agents/graphs/` and are built on
+LangGraph. Each workflow extends `TenantStateGraph`, which:
+
+- Embeds `tenant_id` into the checkpointer thread id
+  (`{tenant_id}:{agent_id}:{session_id}`).
+- Injects a Langfuse `CallbackHandler` when `LANGFUSE_ENABLED=true`.
+- Uses an `AsyncRedisSaver` for state persistence.
+
+Concrete graphs:
+
+- `ResearchAgentGraph` (`apps/agents/graphs/research_agent.py`) — three-node
+  pipeline `retrieve_context → generate_response → update_memory` with a
+  conditional re-loop on low confidence. Memory nodes call the Graphiti-backed
+  `read_memory_node` / `write_memory_node` from `apps/agents/graphs/nodes/memory_nodes.py`.
+
+API:
+
+```
+POST /api/v1/agents/{agent_type}/run/
+Body: { "input": "...", "session_id": "..." }
+```
+
+The view enqueues `agents.run_agent_async` (Celery), which writes an
+`AgentRun` row (tenant-scoped) tracking status / output / error.
+
+## Knowledge graph memory (prompt 14)
+
+`apps/memory/` exposes a Graphiti + Neo4j memory layer:
+
+- `TenantNeo4jClient` — async driver factory; `prefix` (Community) or
+  `database` (Enterprise) isolation.
+- `TenantGraphitiClient` — wraps `Graphiti` with Anthropic Claude (Haiku)
+  for entity extraction and OpenAI embeddings, isolating tenants via Graphiti's
+  `group_id` parameter.
+- Django models: `KnowledgeEpisode` (audit) and `MemorySnapshot`.
+- API: `GET /api/v1/memory/search/?q=`, `GET /api/v1/memory/entities/`,
+  `POST /api/v1/memory/episode/`, `DELETE /api/v1/memory/entity/{uuid}/`.
+
+Bring-up: run `infra/neo4j/init.cypher` against the Neo4j instance to create
+indexes/constraints. Required env: `NEO4J_URI`, `NEO4J_USER`, `NEO4J_PASSWORD`,
+`NEO4J_TENANT_ISOLATION` (default `prefix`).
+
+## Event bus (prompt 15)
+
+`apps/events/` provides a Kafka-backed event bus with per-tenant topic isolation.
+
+- Topics: `{tenant_id}.events.{agent|system|user}` (`apps/events/topic_manager.py`).
+- New tenants get topics auto-provisioned via `post_save` signal on `core.Tenant`.
+- Producer/consumer wrappers: `apps/events/kafka_client.py`
+  (`SentinexKafkaProducer`, `SentinexKafkaConsumer`). Failed messages go to
+  `<topic>.dlq`.
+- Pydantic schemas: `AgentRunEvent`, `SystemEvent`, `UserEvent`
+  (`apps/events/schemas.py`).
+- LangGraph publishers: `apps/agents/graphs/nodes/event_nodes.py`
+  (`publish_run_started_node`, `publish_run_completed_node`,
+  `publish_run_failed_node`).
+- Celery: `events.consume_agent_events` long-running task.
+- Management commands: `kafka_topics --list|--create --tenant=<id>`,
+  `kafka_consumer --tenant=<id> --categories=agent,system`.
+
+Env: `KAFKA_BOOTSTRAP_SERVERS`, `KAFKA_SECURITY_PROTOCOL`,
+`KAFKA_DEFAULT_RETENTION_MS`.
+
+## Analytics (prompt 16)
+
+`apps/analytics/` writes agent run / LLM call / system event rows into
+ClickHouse and exposes aggregated reads.
+
+- `SentinexClickHouseClient` (`apps/analytics/clickhouse_client.py`) wraps
+  `clickhouse-connect`, exposes `insert_agent_run`, `insert_llm_call`,
+  `insert_system_event`, `get_tenant_usage`, `get_agent_metrics`. All methods
+  are `async` and offload to a thread.
+- Pydantic row types: `AgentRunRow`, `LlmCallRow`, `SystemEventRow`,
+  `TenantUsageSummary`, `AgentMetricRow`.
+- Kafka sink: `apps/analytics/consumers/clickhouse_sink.py` —
+  `ClickHouseSink.handle()` deduplicates by `event_id`, batches at 100 events.
+- API: `GET /api/v1/analytics/{usage,runs,costs}/`.
+- Schema: `infra/clickhouse/init.sql` (run once against the cluster).
+
+`apps/billing/usage_tracker.py.get_usage()` reads from ClickHouse and caches
+the `TenantUsageSummary` in Redis (TTL 1h).
+
+Env: `CLICKHOUSE_HOST`, `CLICKHOUSE_PORT`, `CLICKHOUSE_DATABASE`,
+`CLICKHOUSE_USER`, `CLICKHOUSE_PASSWORD`.
+
+## Observability (prompt 17)
+
+`apps/observability/` wraps Langfuse for LLM tracing, prompt management, evals
+and basic alerting.
+
+- `SentinexLangfuseClient` (`apps/observability/langfuse_client.py`) — exposes
+  `get_callback_handler(tenant_id, agent_type, run_id)` (consumed by
+  `TenantStateGraph`) and a direct `trace()` for non-LangGraph paths. Tenant
+  isolation = tags (`tenant:<id>`, `agent:<type>`). `LANGFUSE_SAMPLE_RATE`
+  controls sampling.
+- `prompt_manager.get_prompt(name, version)` / `push_prompt()` — Langfuse
+  registry with Redis cache (5 min TTL) and local-file fallback at
+  `apps/agents/prompts/<name>.md`.
+- `evals.py` — `eval_hallucination_score`, `eval_relevance_score`,
+  Celery task `observability.post_eval` posts scores to Langfuse.
+- `decorators.py.langfuse_trace(name, tenant_from)` — manual tracing for
+  arbitrary sync/async functions.
+- `middleware.LangfuseRequestMiddleware` — wraps requests that opt in via
+  `X-Sentinex-Trace` header.
+- `tasks.check_error_rate()` — Celery periodic task; emits Django signal
+  `observability.signals.high_error_rate` when error rate >= 10%.
+- API: `GET /api/v1/observability/traces/`.
+
+Env: `LANGFUSE_ENABLED`, `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`,
+`LANGFUSE_HOST`, `LANGFUSE_SAMPLE_RATE`.

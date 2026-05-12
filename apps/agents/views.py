@@ -13,6 +13,7 @@ from rest_framework.views import APIView
 
 from apps.agents import context_builder
 from apps.agents.orchestrator import Orchestrator
+from apps.agents.tasks import run_agent_async
 
 
 class QueryView(APIView):
@@ -45,3 +46,33 @@ class QueryView(APIView):
                 ],
             }
         )
+
+
+class AgentRunView(APIView):
+    """POST /api/v1/agents/{agent_type}/run/ — launch a LangGraph agent run."""
+
+    permission_classes: ClassVar[list[type]] = [IsAuthenticated]
+
+    def post(self, request: Request, agent_type: str) -> Response:
+        from django.db import connection
+
+        body_input = (request.data.get("input") or "").strip()
+        session_id = request.data.get("session_id") or "default"
+        if not body_input:
+            return Response(
+                {"detail": "input is required"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        tenant = getattr(connection, "tenant", None)
+        tenant_schema = getattr(tenant, "schema_name", "public")
+        tenant_id = str(getattr(tenant, "pk", tenant_schema))
+
+        async_result = run_agent_async.delay(
+            agent_type=agent_type,
+            tenant_schema=tenant_schema,
+            tenant_id=tenant_id,
+            session_id=session_id,
+            payload={"input": body_input, "metadata": request.data.get("metadata") or {}},
+            user_id=getattr(request.user, "pk", None),
+        )
+        return Response({"run_id": async_result.id, "status": "queued"})
