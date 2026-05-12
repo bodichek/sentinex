@@ -68,7 +68,13 @@
       "Bash(git reset *)",
       "Bash(python *)",
       "PowerShell(Select-String *)",
-      "PowerShell(try { $resp = Invoke-WebRequest -Uri \"http://acme.localhost:8000/integrations/\" -MaximumRedirection 0 -ErrorAction SilentlyContinue -UseBasicParsing; \"Status: $\\($resp.StatusCode\\)\" } catch { \"Result: $\\($_.Exception.Response.StatusCode.value__\\) $\\($_.Exception.Response.StatusDescription\\) -> $\\($_.Exception.Response.Headers['Location']\\)\" })"
+      "PowerShell(try { $resp = Invoke-WebRequest -Uri \"http://acme.localhost:8000/integrations/\" -MaximumRedirection 0 -ErrorAction SilentlyContinue -UseBasicParsing; \"Status: $\\($resp.StatusCode\\)\" } catch { \"Result: $\\($_.Exception.Response.StatusCode.value__\\) $\\($_.Exception.Response.StatusDescription\\) -> $\\($_.Exception.Response.Headers['Location']\\)\" })",
+      "Read(//home/bodichek/**)",
+      "Bash(python3 -c \"from graphiti_core import Graphiti; print\\('OK'\\)\")",
+      "Bash(poetry show *)",
+      "Bash(dig +short TXT scaleupboard.com)",
+      "Bash(dig +short TXT _dmarc.scaleupboard.com)",
+      "Bash(dig +short TXT google._domainkey.scaleupboard.com)"
     ]
   }
 }

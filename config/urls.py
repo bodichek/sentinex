@@ -14,6 +14,9 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("accounts/", include("allauth.urls")),
     path("api/v1/", include("apps.agents.urls")),
+    path("api/v1/", include("apps.memory.urls")),
+    path("api/v1/", include("apps.analytics.urls")),
+    path("api/v1/", include("apps.observability.urls")),
     path(
         "api/addons/weekly_brief/trigger/",
         weekly_brief_api.GenerateView.as_view(),

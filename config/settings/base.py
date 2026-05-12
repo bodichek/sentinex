@@ -55,6 +55,11 @@ SHARED_APPS = [
 
 TENANT_APPS = [
     "apps.agents",
+    "apps.memory",
+    "apps.events",
+    "apps.analytics",
+    "apps.billing",
+    "apps.observability",
     "apps.data_access",
     "apps.chat",
     "apps.addons.weekly_brief",
@@ -98,6 +103,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",
     "apps.core.middleware.TenantMembershipMiddleware",
+    "apps.observability.middleware.LangfuseRequestMiddleware",
 ]
 
 # ---------------------------------------------------------------------------
@@ -373,6 +379,41 @@ LLM_FALLBACK_MODEL = env("LLM_FALLBACK_MODEL", default="claude-haiku-4-5-2025100
 LLM_CACHE_ENABLED = env("LLM_CACHE_ENABLED")
 LLM_CACHE_DEFAULT_TTL = env("LLM_CACHE_DEFAULT_TTL")
 USD_TO_CZK = env("USD_TO_CZK")
+
+ANTHROPIC_RESEARCH_MODEL = env("ANTHROPIC_RESEARCH_MODEL", default="claude-haiku-4-5-20251001")
+
+# ---------------------------------------------------------------------------
+# Langfuse (LLM tracing) — disabled unless explicitly turned on
+# ---------------------------------------------------------------------------
+LANGFUSE_ENABLED = env.bool("LANGFUSE_ENABLED", default=False)
+LANGFUSE_PUBLIC_KEY = env("LANGFUSE_PUBLIC_KEY", default="")
+LANGFUSE_SECRET_KEY = env("LANGFUSE_SECRET_KEY", default="")
+LANGFUSE_HOST = env("LANGFUSE_HOST", default="http://localhost:3000")
+LANGFUSE_SAMPLE_RATE = env.float("LANGFUSE_SAMPLE_RATE", default=1.0)
+
+# ---------------------------------------------------------------------------
+# Neo4j / Graphiti memory graph
+# ---------------------------------------------------------------------------
+NEO4J_URI = env("NEO4J_URI", default="bolt://localhost:7687")
+NEO4J_USER = env("NEO4J_USER", default="neo4j")
+NEO4J_PASSWORD = env("NEO4J_PASSWORD", default="")
+NEO4J_TENANT_ISOLATION = env("NEO4J_TENANT_ISOLATION", default="prefix")  # "prefix" | "database"
+
+# ---------------------------------------------------------------------------
+# Kafka event bus
+# ---------------------------------------------------------------------------
+KAFKA_BOOTSTRAP_SERVERS = env("KAFKA_BOOTSTRAP_SERVERS", default="localhost:9092")
+KAFKA_SECURITY_PROTOCOL = env("KAFKA_SECURITY_PROTOCOL", default="PLAINTEXT")
+KAFKA_DEFAULT_RETENTION_MS = env.int("KAFKA_DEFAULT_RETENTION_MS", default=7 * 24 * 60 * 60 * 1000)
+
+# ---------------------------------------------------------------------------
+# ClickHouse analytics
+# ---------------------------------------------------------------------------
+CLICKHOUSE_HOST = env("CLICKHOUSE_HOST", default="localhost")
+CLICKHOUSE_PORT = env.int("CLICKHOUSE_PORT", default=8123)
+CLICKHOUSE_DATABASE = env("CLICKHOUSE_DATABASE", default="sentinex")
+CLICKHOUSE_USER = env("CLICKHOUSE_USER", default="default")
+CLICKHOUSE_PASSWORD = env("CLICKHOUSE_PASSWORD", default="")
 
 CRYPTOGRAPHY_KEY = env("CRYPTOGRAPHY_KEY", default="insecure-dev-cryptography-key-change")
 
