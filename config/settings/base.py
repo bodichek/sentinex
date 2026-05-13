@@ -84,6 +84,7 @@ TENANT_APPS = [
     "apps.connectors.jira",
     "apps.connectors.notion",
     "apps.connectors.dropbox",
+    "apps.connectors.merk",
 ]
 
 INSTALLED_APPS = [*SHARED_APPS, *[a for a in TENANT_APPS if a not in SHARED_APPS]]
