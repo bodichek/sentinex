@@ -117,6 +117,7 @@
 - [ ] **Cost monitoring per tenant** — kdy nastavit alerts? (po prvních 5 klientech?)
 - [ ] **Security audit** — před ostrým provozem (září 2026)
 - [ ] **GDPR retention review** — kdo je data controller (SCB) vs. processor (Sentinex)?
+- [ ] **CI cleanup** — pre-existing baseline ~70 ruff errors + ~380 mypy errors v `apps/agents`, `apps/analytics`, `apps/observability`, `apps/chat`, `apps/data_access`, `apps/connectors/{fapi/sync.py,pipedrive/client.py}`. Tyto chyby předcházejí ingest framework práci. Potřeba samostatný cleanup PR — odhad 2–3 h ručně, nebo `ruff --fix --unsafe-fixes` + manual type annotation pass.
 
 ---
 
