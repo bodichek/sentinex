@@ -655,3 +655,47 @@ the embedder returns deterministic pseudo-vectors instead of calling
 OpenAI. The pipeline runs end-to-end and `search_chunks` works against
 your local pgvector, just with low-quality similarity. Useful for testing
 extractors / chunker without burning API credit.
+
+## Identity registry (apps/identity, SHARED schema)
+
+`apps.identity` lives in `SHARED_APPS` so SCB employees can resolve a
+client across all tenants before tenant context is set. Per-tenant
+business data (coaching, surveys, challenges, finance) holds FKs to
+`identity.Organization` / `identity.Person`.
+
+| Model | Purpose |
+| --- | --- |
+| `Organization` | Master record for a company. `org_type` ∈ {client, prospect, vendor, partner, internal}. Optional `tenant` 1:1 link once the org becomes a paying client. |
+| `Person` | Master record for a human. `person_type` ∈ {client, team, contact, vendor, prospect}. Optional `user` link to `core.User` when the person logs in. |
+| `PersonIdentity` | Identifier for a Person (email, slack_id, pipedrive_person_id, fapi_customer_id, br_user_id, …). `UNIQUE(identity_type, identity_value)`. |
+| `OrganizationIdentity` | Identifier for an Organization (ICO, DIC, domain, pipedrive_org_id, fapi_customer_id, …). |
+| `PersonOrganizationRole` | Person ↔ Organization with role (CEO/COO/CFO/coach/sales/contact…) and validity window. |
+| `PersonMergeLog` | Audit trail of Person merges; supports manual undo via `undo_token`. |
+
+`apps.identity.services.IdentityResolver` is the single source of truth for
+matching. It tries: exact identity match → email-domain + fuzzy name → create
+new (low confidence, flagged for review). AI-based matching is a planned
+third tier (LLM gateway integration).
+
+Connectors call the resolver via the thin wrappers in
+`apps.connectors._framework.identity_hook`; they never instantiate the
+resolver directly.
+
+## Ingest framework primitives
+
+(Detailed contract in `docs/CONNECTORS.md`.)
+
+| Model / abstraction | Location | Role |
+| --- | --- | --- |
+| `ProvenanceMixin` | `apps.connectors._framework.provenance` | Abstract model adding `source_system`, `source_id`, `source_synced_at`, `source_updated_at`, `raw_payload`, FK `sync_run`. Mixed into every `scb_*` ingest table. |
+| `SyncRun` | `apps.connectors._framework.models` | One row per sync execution (provider, resource, mode, status, counters, cursors). Source of truth for "did the FAPI sync run today?". |
+| `IngestionCursor` (existing) | `apps.data_access.models` | Per-source incremental cursor (used by `BaseSync._read/write_cursor`). |
+
+Ingest tables added by connectors (one per resource, all carry `ProvenanceMixin`):
+
+- `scb_pipedrive_{organization,person,deal,activity}` in `apps.connectors.pipedrive.models`
+- `scb_fapi_{customer,invoice}` in `apps.connectors.fapi.models`
+- `scb_slack_{workspace,channel,message}` in `apps.connectors.slack.models`
+- `scb_merk_company` in `apps.connectors.merk.models`
+
+All have FK to `identity.Organization` and/or `identity.Person`.

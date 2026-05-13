@@ -288,3 +288,75 @@ admin pastes their own API key in the setup wizard.
 6. Add a Beat entry to `CELERY_BEAT_SCHEDULE` for `connectors.<name>.dispatch`.
 7. Document under "Existing connectors" above and append any new env vars
    to `.env.example`.
+
+## Ingest framework (apps/connectors/_framework)
+
+The MCP layer above answers **on-demand tool calls** (auth, dispatch, metric
+snapshots into `DataSnapshot`). For continuous ETL into normalized tables —
+Pipedrive deals, FAPI invoices, Slack messages, Merk lookups — connectors
+use the **ingest framework** sitting alongside the MCP code, not replacing it.
+
+| Module | Provides |
+| --- | --- |
+| `provenance.ProvenanceMixin` | Abstract model: `source_system`, `source_id`, `source_synced_at`, `source_updated_at`, `raw_payload`, FK `sync_run`. Mixed into every connector ingest table. |
+| `models.SyncRun` | Per-run history (provider, resource, mode, status, cursors, counters, errors). Indexed `(provider, -started_at)`. |
+| `base_sync.BaseSync` | ABC orchestrating `fetch()` → `persist()` with per-provider rate limit, per-row transaction + error capture, cursor advance. |
+| `rate_limit.TokenBucket` | Cache-backed token bucket. One bucket per provider, shared across resources. |
+| `retry.retry_with_backoff` | Exponential backoff decorator honoring `retry_after` exception attribute. |
+| `identity_hook.resolve_{person,organization}` | Wrappers around `apps.identity.services.IdentityResolver` so connectors don't import the resolver directly. |
+
+### Subclass contract
+
+```python
+from apps.connectors._framework import BaseSync, TokenBucket, resolve_organization
+
+class PipedriveDealSync(BaseSync):
+    provider = "pipedrive"
+    resource = "deals"
+    rate_limit = TokenBucket("pipedrive", capacity=80, refill_per_sec=40)
+
+    def fetch(self, ctx):
+        with PipedriveClient(self.integration) as c:
+            yield from c.iter_deals(since=ctx.cursor_before or None)
+
+    def persist(self, raw, ctx):
+        org = resolve_organization(source_system="pipedrive",
+                                    name=raw["org_name"],
+                                    id_in_source=str(raw["org_id"]))
+        obj, created = ScbPipedriveDeal.objects.update_or_create(
+            pipedrive_id=int(raw["id"]),
+            defaults={
+                "source_system": "pipedrive",
+                "source_id": str(raw["id"]),
+                "raw_payload": raw, "sync_run": ctx.run,
+                "organization": org,
+                # ... business fields
+            },
+        )
+        return "created" if created else "updated"
+```
+
+Run: `PipedriveDealSync(integration).run(mode=SyncMode.INCREMENTAL)`.
+
+### Ingest connectors today
+
+| Connector | Resources | Pattern |
+| --- | --- | --- |
+| **pipedrive** | organizations → persons → deals → activities | reference implementation; coexists with `sync.py` metric path |
+| **fapi** | customers → invoices | ICO-based identity match (strongest for CZ entities) |
+| **slack** | users → channels → messages | `users.list` populates `PersonIdentity(slack_id)` for SCB team; only `is_tracked=True` channels pulled by `MessageSync` |
+| **merk** | on-demand `enrich(ico)` / `enrich_batch(icos)` | **NOT periodic batch** — `apps.connectors.merk.services` with 30-day cache refresh |
+
+All four call `IdentityResolver` before persisting, so records across systems
+link to the same `identity.Organization` / `identity.Person` master rows.
+
+Per-connector capability sheets live in `docs/connectors/`:
+[pipedrive](connectors/pipedrive.md), [fapi](connectors/fapi.md),
+[slack](connectors/slack.md), [google_workspace](connectors/google_workspace.md),
+[merk](connectors/merk.md).
+
+### Provenance retention
+
+`raw_payload` is retained for 90 days. A cleanup Celery beat task will null
+it for older rows (planned; tracked in `docs/TODO.md`).
+

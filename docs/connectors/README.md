@@ -8,11 +8,11 @@ identity resolution flow, sync strategii a otevřené body.
 
 | Konektor | Status dok | Status kódu | Účel |
 | --- | --- | --- | --- |
-| [Pipedrive](pipedrive.md) | ✅ | scaffolding | Sales pipeline SCB |
-| [FAPI](fapi.md) | ✅ ⚠️ ověř | scaffolding | Fakturace SCB → klienti |
-| [Slack](slack.md) | ✅ | scaffolding | Interní tým + výstupní zprávy |
+| [Pipedrive](pipedrive.md) | ✅ | **ingest live** (orgs/persons/deals/activities) | Sales pipeline SCB |
+| [FAPI](fapi.md) | ✅ ⚠️ ověř | **ingest live** (customers/invoices) | Fakturace SCB → klienti |
+| [Slack](slack.md) | ✅ | **ingest live** (users/channels/messages) | Interní tým + výstupní zprávy |
 | [Google Workspace](google_workspace.md) | ✅ | scaffolding (microsoft365 existuje, Google chybí) | Kalendář, Drive |
-| [Merk.cz](merk.md) | ✅ ⚠️ ověř | neexistuje | Externí firemní data CZ/SK |
+| [Merk.cz](merk.md) | ✅ ⚠️ ověř | **scaffold + client + on-demand `enrich()`** | Externí firemní data CZ/SK |
 
 ⚠️ ověř = doplnit detaily z reálného účtu SCB (FAPI dokumentace v účtu, Merk API spec).
 

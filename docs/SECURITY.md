@@ -351,3 +351,32 @@ Before production launch:
 - [ ] PII masking working in LLM calls
 - [ ] Tenant isolation tests passing
 - [ ] Security.txt file served at /.well-known/security.txt
+
+## Identity merge audit
+
+Every Person/Organization merge produces a `PersonMergeLog` row with
+`matched_by` (email_exact, identity_exact, name_domain_fuzzy, ai_match,
+slack_lookup, manual), `confidence`, `matched_by_user`, JSONB `snapshot`
+of the pre-merge state, and `undo_token` for safe rollback. The log is a
+shared-schema audit trail; only Admin / Senior coach roles can list it.
+
+## Provenance retention
+
+Connector ingest rows carry the raw API response in `raw_payload` (JSONB).
+**Retention policy: 90 days**, after which a Celery beat job nulls the
+field but keeps the structured columns. Rationale: full payload is useful
+for backfilling new structured fields, but accumulates storage and risks
+holding PII longer than necessary. Cleanup task is tracked in
+`docs/TODO.md`.
+
+## RBAC + data classification
+
+Detailed RBAC + data classification design lives in
+`bronislav/sentinex-role-a-prava.md` (pending approval before
+implementation). Key design choices:
+- Per-role + per-organization scope (`RoleAssignment`).
+- Every `MemoryEmbedding` will carry `data_class` (1on1_content,
+  finance, sales_pipeline, billing, community, …) and vector retrieval
+  pre-filters by viewer's accessible classes — embeddings tagged at
+  ingest, not retrofitted later.
+- 1:1 content has the hardest isolation: per-tenant schema + role gate.

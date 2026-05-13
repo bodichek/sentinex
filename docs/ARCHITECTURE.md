@@ -423,3 +423,36 @@ Total: 5–20 seconds. Tokens: ~10–20K. Cost: ~10–20 CZK per complex query.
 - LLM API rate limits (handle with queuing)
 - Postgres connection pool (use pgbouncer when needed)
 - Redis memory (monitor and scale vertical first)
+
+## Sentinex ↔ Business Review (BR)
+
+Sentinex is the long-term home. BR (Scaleupboard, review.scaleupboard.com)
+is mid-refactor; once that refactor produces clean code, BR will be
+**merged into Sentinex** as a single codebase. Until then BR stays in its
+own repo and Sentinex exposes a service API for it to call. Strategic
+context lives in `bronislav/sentinex-architektura-a-plan.md`.
+
+## Data layout — two layers
+
+- **PUBLIC (shared) schema** — identity registry (`Organization`, `Person`,
+  `PersonIdentity`), SCB-owned data *about* clients (Pipedrive deals, FAPI
+  invoices SCB issues, Scaleupboard Slack messages, Zoom recordings of
+  coaching sessions, Merk enrichment), and agent/infra tables (`AgentRun`,
+  `MemoryEmbedding`, `SyncRun`, audit logs, usage records). Only SCB
+  employees access.
+- **TENANT schema (one per client)** — coaching content owned by the client:
+  BR coaching sessions, SCL/TMF surveys, business reviews, challenges,
+  financial statements, plus client-connected sources (their own Slack,
+  Trello, Asana, Drive). Strict isolation; `DROP SCHEMA` on offboarding
+  gives GDPR-friendly deletion.
+
+Detailed schema in `bronislav/sentinex-db-struktura.md`.
+
+## Identity layer (apps/identity)
+
+`apps.identity` (SHARED schema) is the foundation: every connector record
+links to `identity.Organization` / `identity.Person` master rows.
+That's what makes cross-system 360° work — a client uses a different
+email in FAPI, Pipedrive and BR, plus has a Slack ID, all unified via
+`PersonIdentity`. See `docs/DATA_ACCESS.md` for models, `docs/CONNECTORS.md`
+for the resolver hook used by ingest.
