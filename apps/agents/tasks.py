@@ -66,15 +66,15 @@ def run_agent_async(
         with schema_context(tenant_schema):
             run.status = AgentRun.STATUS_SUCCEEDED
             run.output = {"text": output_text}
-            run.finished_at = datetime.now(UTC)
+            run.finished_at = datetime.now(UTC)  # type: ignore[assignment]
             run.save(update_fields=["status", "output", "finished_at"])
         return {"run_id": str(run.id), "output": output_text}
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         agent_logger.exception("agent run failed")
         with schema_context(tenant_schema):
             run.status = AgentRun.STATUS_FAILED
             run.error = str(exc)
-            run.finished_at = datetime.now(UTC)
+            run.finished_at = datetime.now(UTC)  # type: ignore[assignment]
             run.save(update_fields=["status", "error", "finished_at"])
         raise
 

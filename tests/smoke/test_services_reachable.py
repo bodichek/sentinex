@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import pytest
 
-
 pytestmark = [pytest.mark.smoke, pytest.mark.django_db]
 
 
@@ -35,8 +34,8 @@ def test_redis_reachable(redis_available: bool) -> None:
 def test_neo4j_reachable(neo4j_available: bool) -> None:
     if not neo4j_available:
         pytest.skip("neo4j not reachable")
-    from neo4j import GraphDatabase
     from django.conf import settings
+    from neo4j import GraphDatabase
 
     if not settings.NEO4J_PASSWORD:
         pytest.skip("NEO4J_PASSWORD not configured")
@@ -58,8 +57,8 @@ def test_neo4j_reachable(neo4j_available: bool) -> None:
 def test_kafka_reachable(kafka_available: bool) -> None:
     if not kafka_available:
         pytest.skip("kafka not reachable")
-    from kafka.admin import KafkaAdminClient
     from django.conf import settings
+    from kafka.admin import KafkaAdminClient
 
     admin = KafkaAdminClient(
         bootstrap_servers=settings.KAFKA_BOOTSTRAP_SERVERS,
@@ -99,11 +98,12 @@ def test_langfuse_reachable(langfuse_available: bool) -> None:
     if not langfuse_available:
         pytest.skip("langfuse not reachable")
     import urllib.request
+
     from django.conf import settings
 
     url = settings.LANGFUSE_HOST.rstrip("/") + "/api/public/health"
     try:
-        with urllib.request.urlopen(url, timeout=2) as resp:  # noqa: S310
+        with urllib.request.urlopen(url, timeout=2) as resp:
             assert resp.status in (200, 401, 404)
     except Exception:
         # Some Langfuse builds don't expose /health; reachability already

@@ -74,7 +74,7 @@ def run_sync(days: int = 7) -> DataSnapshot | None:
         campaigns = client.list_campaigns()
         campaigns_summary = _aggregate_campaigns(client, campaigns)
 
-    total_subs = sum(int(l.get("subscribers") or l.get("subscribers_count") or 0) for l in lists_)
+    total_subs = sum(int(lst.get("subscribers") or lst.get("subscribers_count") or 0) for lst in lists_)
     snapshot = DataSnapshot.objects.create(
         source="ecomail",
         period_start=period_start,
@@ -84,7 +84,7 @@ def run_sync(days: int = 7) -> DataSnapshot | None:
                 "data": {
                     "total_contacts": total_subs,
                     "list_count": len(lists_),
-                    "lists": [{"id": l.get("id"), "name": l.get("name")} for l in lists_],
+                    "lists": [{"id": lst.get("id"), "name": lst.get("name")} for lst in lists_],
                 },
                 "ok": True,
             },

@@ -29,10 +29,10 @@ def test_full_stack_single_run(
     if not (kafka_available and clickhouse_available):
         pytest.skip("kafka or clickhouse not reachable")
 
-    from apps.events.kafka_client import SentinexKafkaProducer
-    from apps.events.topic_manager import ensure_topics, topic_for
     from apps.analytics.clickhouse_client import SentinexClickHouseClient
     from apps.analytics.schemas import AgentRunRow
+    from apps.events.kafka_client import SentinexKafkaProducer
+    from apps.events.topic_manager import ensure_topics, topic_for
     from tests.integration.test_clickhouse_analytics import _ensure_schema
 
     _ensure_schema()

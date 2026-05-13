@@ -46,7 +46,7 @@ class UsageView(APIView):
         client = SentinexClickHouseClient()
         try:
             summary = asyncio.run(client.get_tenant_usage(_tenant_id(request), f, t))
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
         return Response(summary.model_dump(mode="json"))
 
@@ -62,7 +62,7 @@ class RunsView(APIView):
             metrics = asyncio.run(
                 client.get_agent_metrics(_tenant_id(request), agent_type, period)
             )
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
         return Response({"period": period, "rows": [m.model_dump() for m in metrics]})
 
@@ -76,7 +76,7 @@ class CostsView(APIView):
         client = SentinexClickHouseClient()
         try:
             summary = asyncio.run(client.get_tenant_usage(_tenant_id(request), f, t))
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
         out: dict[str, Any] = {
             "period_from": f.isoformat(),

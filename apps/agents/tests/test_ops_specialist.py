@@ -33,7 +33,7 @@ class TestOpsSpecialist:
         payload = {
             "reliability_score": 0.78,
             "deployment_health": "degraded",
-            "incidents": ["3× P2 in last 14d on payments service"],
+            "incidents": ["3x P2 in last 14d on payments service"],
             "cost_trend": "rising",
             "recommendations": ["Add canary on payments deploy pipeline"],
             "confidence": 0.7,

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from apps.data_access.knowledge.extractors import (  # noqa: F401  (triggers registration)
+from apps.data_access.knowledge.extractors import (
     base,
     supported_mime_types,
 )

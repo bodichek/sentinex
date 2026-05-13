@@ -12,7 +12,7 @@ from apps.data_access.knowledge.extractors.base import (
 __all__ = ["ExtractionResult", "extract", "register", "supported_mime_types"]
 
 # Trigger registration of built-in extractors
-from apps.data_access.knowledge.extractors import (  # noqa: E402, F401
+from apps.data_access.knowledge.extractors import (  # noqa: F401
     gmail,
     google_docs,
     google_sheets,

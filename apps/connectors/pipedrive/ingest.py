@@ -11,7 +11,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Iterator
 from datetime import datetime
-from typing import Any
+from typing import Any, cast
 
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
@@ -31,6 +31,7 @@ from apps.connectors.pipedrive.models import (
     ScbPipedriveOrganization,
     ScbPipedrivePerson,
 )
+from apps.identity.models import Organization
 
 logger = logging.getLogger(__name__)
 
@@ -100,12 +101,13 @@ class PipedrivePersonSync(BaseSync):
         email = self._primary_email(raw)
         phone = self._primary_phone(raw)
         org_pipedrive_id = self._org_id(raw)
-        master_org = None
+        master_org: Organization | None = None
         if org_pipedrive_id:
             mirror = ScbPipedriveOrganization.objects.filter(
                 pipedrive_id=org_pipedrive_id
             ).only("organization_id").first()
-            master_org = mirror.organization if mirror else None
+            if mirror:
+                master_org = cast("Organization | None", mirror.organization)
         master_person = resolve_person(
             source_system=PROVIDER,
             email=email,

@@ -7,11 +7,11 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
-from apps.data_access.knowledge.search import SearchHit
 from apps.data_access.insight_functions.knowledge import (
     KnowledgeAnswerContext,
     search_company_knowledge,
 )
+from apps.data_access.knowledge.search import SearchHit
 
 
 def _hit(idx: int = 0) -> SearchHit:

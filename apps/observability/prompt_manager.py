@@ -36,7 +36,7 @@ async def get_prompt(name: str, version: int | None = None) -> str:
         return cached  # type: ignore[no-any-return]
 
     client = get_client()
-    sdk = client._get_sdk()  # noqa: SLF001 — internal helper, intentional
+    sdk = client._get_sdk()
     if sdk is not None:
         try:
             prompt = await asyncio.to_thread(
@@ -45,7 +45,7 @@ async def get_prompt(name: str, version: int | None = None) -> str:
             content: str = getattr(prompt, "prompt", "") or str(prompt)
             cache.set(key, content, CACHE_TTL_SECONDS)
             return content
-        except Exception:  # noqa: BLE001
+        except Exception:
             logger.warning("Langfuse get_prompt failed; using local fallback")
 
     local = _local_fallback(name)
@@ -57,7 +57,7 @@ async def get_prompt(name: str, version: int | None = None) -> str:
 
 async def push_prompt(name: str, content: str, labels: list[str] | None = None) -> None:
     client = get_client()
-    sdk = client._get_sdk()  # noqa: SLF001
+    sdk = client._get_sdk()
     if sdk is None:
         logger.info("Langfuse disabled; push_prompt is a no-op for %s", name)
         return

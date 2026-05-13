@@ -79,14 +79,14 @@ def _resolve_tenant(args: tuple[Any, ...], kwargs: dict[str, Any], source: str) 
 
 def _safe(value: Any) -> Any:
     try:
-        if isinstance(value, (str, int, float, bool, type(None))):
+        if isinstance(value, str | int | float | bool | type(None)):
             return value
         if isinstance(value, dict):
             return {str(k): _safe(v) for k, v in value.items() if not str(k).startswith("_")}
-        if isinstance(value, (list, tuple)):
+        if isinstance(value, list | tuple):
             return [_safe(v) for v in value][:10]
         return repr(value)[:200]
-    except Exception:  # noqa: BLE001
+    except Exception:
         return "<unserialisable>"
 
 

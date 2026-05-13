@@ -39,7 +39,7 @@ async def read_memory_node(state: AgentState) -> AgentState:
 
     try:
         edges: list[Any] = await _client.search(tenant_id, query, num_results=10)
-    except Exception:  # noqa: BLE001
+    except Exception:
         logger.exception("graphiti search failed; falling back to empty context")
         state["memory_context"] = []
         return state
@@ -75,7 +75,7 @@ async def write_memory_node(state: AgentState) -> AgentState:
             source_description="agent_turn",
             metadata=state.get("metadata") or {},
         )
-    except Exception:  # noqa: BLE001
+    except Exception:
         logger.exception("graphiti add_episode failed; continuing without persistence")
 
     return state

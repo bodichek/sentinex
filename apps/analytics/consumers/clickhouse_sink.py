@@ -39,18 +39,18 @@ class ClickHouseSink:
         et = event.get("event_type", "")
         try:
             if et.startswith("run."):
-                row = self._agent_row(event)
+                agent_row = self._agent_row(event)
                 async with self._lock:
-                    self._agent_buffer.append(row)
+                    self._agent_buffer.append(agent_row)
                     if len(self._agent_buffer) >= BATCH_SIZE:
                         await self._flush_agent()
             else:
-                row = self._system_row(event)
+                system_row = self._system_row(event)
                 async with self._lock:
-                    self._system_buffer.append(row)
+                    self._system_buffer.append(system_row)
                     if len(self._system_buffer) >= BATCH_SIZE:
                         await self._flush_system()
-        except Exception:  # noqa: BLE001
+        except Exception:
             logger.exception("clickhouse sink failed for event_id=%s", event_id)
 
     def _agent_row(self, event: dict[str, Any]) -> AgentRunRow:

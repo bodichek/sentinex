@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from collections import Counter
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Any
 
 from django.utils import timezone
@@ -24,7 +24,7 @@ def _summarise_cards(cards: list[dict[str, Any]]) -> dict[str, Any]:
         due = c.get("due")
         if due and not c.get("dueComplete"):
             try:
-                due_dt = timezone.datetime.fromisoformat(due.replace("Z", "+00:00"))
+                due_dt = datetime.fromisoformat(due.replace("Z", "+00:00"))
                 if due_dt < now:
                     overdue += 1
             except Exception:

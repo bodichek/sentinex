@@ -18,8 +18,8 @@ pytestmark = [pytest.mark.integration]
 def test_neo4j_driver_writes_and_reads(neo4j_available: bool, integration_tenant_id: str) -> None:
     if not neo4j_available:
         pytest.skip("neo4j not reachable")
-    from neo4j import GraphDatabase
     from django.conf import settings
+    from neo4j import GraphDatabase
 
     drv = GraphDatabase.driver(
         settings.NEO4J_URI, auth=(settings.NEO4J_USER, settings.NEO4J_PASSWORD)

@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+import contextlib
 import logging
-from typing import Callable
+from collections.abc import Callable
 
 from django.http import HttpRequest, HttpResponse
 
@@ -36,16 +37,14 @@ class LangfuseRequestMiddleware:
                     name=f"{request.method} {request.path}",
                     input={"path": request.path, "query": request.GET.dict()},
                 )
-            except Exception:  # noqa: BLE001
+            except Exception:
                 logger.exception("failed to create Langfuse request trace")
             if trace is not None and hasattr(trace, "id"):
                 request.langfuse_trace_id = trace.id  # type: ignore[attr-defined]
 
         response = self.get_response(request)
         if trace is not None and hasattr(trace, "update"):
-            try:
+            with contextlib.suppress(Exception):
                 trace.update(output={"status_code": response.status_code})
-            except Exception:  # noqa: BLE001
-                pass
             response.headers[ENABLE_HEADER] = getattr(trace, "id", "")
         return response

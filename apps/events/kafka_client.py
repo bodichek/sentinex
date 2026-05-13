@@ -38,7 +38,8 @@ def _bootstrap() -> str:
 
 def _serialize(value: Any) -> bytes:
     if hasattr(value, "model_dump_json"):
-        return value.model_dump_json().encode("utf-8")
+        encoded: bytes = value.model_dump_json().encode("utf-8")
+        return encoded
     return json.dumps(value, default=str).encode("utf-8")
 
 
@@ -124,7 +125,7 @@ class SentinexKafkaConsumer:
                     break
                 try:
                     await handler(msg.value)
-                except Exception:  # noqa: BLE001
+                except Exception:
                     logger.exception("handler failed; dropping into DLQ topic")
                     await self._send_to_dlq(msg.topic, msg.value)
         finally:
@@ -134,7 +135,7 @@ class SentinexKafkaConsumer:
     async def _send_to_dlq(self, source_topic: str, value: Any) -> None:
         producer = SentinexKafkaProducer()
         try:
-            inner = await producer._ensure()  # noqa: SLF001
+            inner = await producer._ensure()
             await inner.send_and_wait(f"{source_topic}.dlq", value)
         finally:
             await producer.close()

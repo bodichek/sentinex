@@ -34,7 +34,7 @@ from apps.data_access.insight_functions.exceptions import InsufficientData
 
 
 def _serialize(value: Any) -> Any:
-    if is_dataclass(value):
+    if is_dataclass(value) and not isinstance(value, type):
         return asdict(value)
     if isinstance(value, list):
         return [_serialize(v) for v in value]

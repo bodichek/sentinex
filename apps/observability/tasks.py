@@ -18,7 +18,7 @@ ERROR_RATE_THRESHOLD = 0.10
 def check_error_rate(window_minutes: int = 30) -> dict[str, float | int]:
     """Pull recent traces from Langfuse and emit a signal when error rate is high."""
     client = get_client()
-    sdk = client._get_sdk()  # noqa: SLF001
+    sdk = client._get_sdk()
     if sdk is None:
         return {"enabled": 0, "error_rate": 0.0}
 
@@ -28,7 +28,7 @@ def check_error_rate(window_minutes: int = 30) -> dict[str, float | int]:
         since = datetime.now(UTC) - timedelta(minutes=window_minutes)
         traces = sdk.fetch_traces(from_timestamp=since.isoformat())
         items = list(getattr(traces, "data", []) or [])
-    except Exception:  # noqa: BLE001
+    except Exception:
         logger.exception("failed to fetch traces for error_rate check")
         return {"enabled": 1, "error_rate": 0.0}
 

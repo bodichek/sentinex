@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 from celery import shared_task
 
@@ -47,13 +46,13 @@ def post_eval(
 ) -> None:
     """Post an eval score back to Langfuse asynchronously."""
     client = get_client()
-    sdk = client._get_sdk()  # noqa: SLF001
+    sdk = client._get_sdk()
     if sdk is None:
         logger.debug("langfuse disabled; skipping eval %s=%s", name, value)
         return
     try:
         sdk.score(trace_id=trace_id, name=name, value=value, comment=comment)
-    except Exception:  # noqa: BLE001
+    except Exception:
         logger.exception("failed to post eval %s for trace %s", name, trace_id)
 
 

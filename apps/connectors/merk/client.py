@@ -54,8 +54,11 @@ class MerkClient:
         if api_key is None:
             raise MerkClientError("Merk client needs api_key or integration")
         self._api_key = api_key
+        resolved_base: str = base_url or str(
+            getattr(settings, "MERK_BASE_URL", DEFAULT_BASE_URL)
+        )
         self._client = http_client or httpx.Client(
-            base_url=base_url or getattr(settings, "MERK_BASE_URL", DEFAULT_BASE_URL),
+            base_url=resolved_base,
             timeout=DEFAULT_TIMEOUT,
             headers={
                 "Accept": "application/json",
@@ -90,7 +93,8 @@ class MerkClient:
     # ----------------------------------------------------------- public API
     def lookup_by_ico(self, ico: str) -> dict[str, Any]:
         """GET /subjects/{ico} — single-company lookup."""
-        return self._get(f"/subjects/{ico}")
+        data: dict[str, Any] = self._get(f"/subjects/{ico}")
+        return data
 
     def batch_lookup(self, icos: list[str]) -> list[dict[str, Any]]:
         """POST /subjects/batch — up to 500 IČOs per request."""
@@ -109,4 +113,5 @@ class MerkClient:
         return list(resp)
 
     def financials(self, ico: str) -> dict[str, Any]:
-        return self._get(f"/subjects/{ico}/financials")
+        data: dict[str, Any] = self._get(f"/subjects/{ico}/financials")
+        return data

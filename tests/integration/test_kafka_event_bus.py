@@ -27,7 +27,7 @@ def test_topic_create_then_list(kafka_available: bool, integration_tenant_id: st
 def test_producer_consumer_roundtrip(kafka_available: bool, integration_tenant_id: str) -> None:
     if not kafka_available:
         pytest.skip("kafka not reachable")
-    from apps.events.kafka_client import SentinexKafkaConsumer, SentinexKafkaProducer
+    from apps.events.kafka_client import SentinexKafkaProducer
     from apps.events.topic_manager import ensure_topics, topic_for
 
     ensure_topics(integration_tenant_id)
@@ -50,7 +50,6 @@ def test_producer_consumer_roundtrip(kafka_available: bool, integration_tenant_i
             await producer.close()
 
         from aiokafka import AIOKafkaConsumer
-
         from django.conf import settings
 
         consumer = AIOKafkaConsumer(

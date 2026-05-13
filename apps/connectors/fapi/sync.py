@@ -71,7 +71,7 @@ def run_sync(days: int = 7) -> DataSnapshot | None:
             "clients": {
                 "data": {
                     "total": int(
-                        clients_raw.get("count")
+                        clients_raw.get("count") or 0
                         if isinstance(clients_raw, dict)
                         else len(_items_list(clients_raw))
                     )

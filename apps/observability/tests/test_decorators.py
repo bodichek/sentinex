@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 from typing import Any
 from unittest.mock import MagicMock, patch
 
@@ -55,10 +56,8 @@ def test_decorator_records_error_level_on_exception() -> None:
         async def boom(tenant_id: str = "t1") -> int:
             raise ValueError("nope")
 
-        try:
+        with contextlib.suppress(ValueError):
             _run(boom(tenant_id="acme"))
-        except ValueError:
-            pass
 
     trace.update.assert_called()
     kwargs = trace.update.call_args.kwargs

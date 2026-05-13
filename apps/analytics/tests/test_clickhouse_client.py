@@ -17,14 +17,14 @@ def _run(coro: Any) -> Any:
 
 
 def _mk_run(**over: Any) -> AgentRunRow:
-    base = dict(
-        tenant_id="t1",
-        run_id=uuid4(),
-        agent_type="research",
-        session_id="s1",
-        status="completed",
-        started_at=datetime.now(UTC),
-    )
+    base = {
+        "tenant_id": "t1",
+        "run_id": uuid4(),
+        "agent_type": "research",
+        "session_id": "s1",
+        "status": "completed",
+        "started_at": datetime.now(UTC),
+    }
     base.update(over)
     return AgentRunRow.model_validate(base)
 

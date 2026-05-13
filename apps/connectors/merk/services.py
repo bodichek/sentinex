@@ -35,7 +35,7 @@ def _resolve_integration() -> Integration | None:
 def _cache_fresh(row: ScbMerkCompany) -> bool:
     if not row.source_synced_at:
         return False
-    return timezone.now() - row.source_synced_at < timedelta(days=REFRESH_AFTER_DAYS)
+    return bool(timezone.now() - row.source_synced_at < timedelta(days=REFRESH_AFTER_DAYS))
 
 
 def _upsert(ico: str, payload: dict[str, Any]) -> ScbMerkCompany:

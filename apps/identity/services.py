@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from difflib import SequenceMatcher
+from typing import cast
 
 from django.db import transaction
 from django.utils import timezone
@@ -74,22 +75,22 @@ def _similarity(a: str, b: str) -> float:
 
 
 def _identity_type_for_source_person(source: str) -> str:
-    mapping = {
-        SourceSystem.PIPEDRIVE: IdentityType.PIPEDRIVE_PERSON_ID,
-        SourceSystem.FAPI: IdentityType.FAPI_CUSTOMER_ID,
-        SourceSystem.BR: IdentityType.BR_USER_ID,
-        SourceSystem.SLACK: IdentityType.SLACK_ID,
-        SourceSystem.GOOGLE: IdentityType.GOOGLE_ID,
+    mapping: dict[str, str] = {
+        SourceSystem.PIPEDRIVE.value: IdentityType.PIPEDRIVE_PERSON_ID.value,
+        SourceSystem.FAPI.value: IdentityType.FAPI_CUSTOMER_ID.value,
+        SourceSystem.BR.value: IdentityType.BR_USER_ID.value,
+        SourceSystem.SLACK.value: IdentityType.SLACK_ID.value,
+        SourceSystem.GOOGLE.value: IdentityType.GOOGLE_ID.value,
     }
-    return mapping.get(source, IdentityType.EMAIL)
+    return mapping.get(source, IdentityType.EMAIL.value)
 
 
 def _identity_type_for_source_org(source: str) -> str:
-    mapping = {
-        SourceSystem.PIPEDRIVE: IdentityType.PIPEDRIVE_ORG_ID,
-        SourceSystem.FAPI: IdentityType.FAPI_CUSTOMER_ID,
+    mapping: dict[str, str] = {
+        SourceSystem.PIPEDRIVE.value: IdentityType.PIPEDRIVE_ORG_ID.value,
+        SourceSystem.FAPI.value: IdentityType.FAPI_CUSTOMER_ID.value,
     }
-    return mapping.get(source, IdentityType.DOMAIN)
+    return mapping.get(source, IdentityType.DOMAIN.value)
 
 
 class IdentityResolver:
@@ -120,9 +121,10 @@ class IdentityResolver:
             ).first()
             if existing:
                 self._touch_identity(existing, record.source_system)
-                self._merge_person_fields(existing.person, record)
+                hit_person = cast(Person, existing.person)
+                self._merge_person_fields(hit_person, record)
                 return ResolveResult(
-                    person=existing.person,
+                    person=hit_person,
                     organization=organization,
                     matched_by=MatchMethod.IDENTITY_EXACT,
                     confidence=1.0,
@@ -188,9 +190,10 @@ class IdentityResolver:
             ).first()
             if existing:
                 self._touch_org_identity(existing, record.source_system)
+                hit_org = cast(Organization, existing.organization)
                 return ResolveResult(
                     person=None,
-                    organization=existing.organization,
+                    organization=hit_org,
                     matched_by=MatchMethod.IDENTITY_EXACT,
                     confidence=1.0,
                 )

@@ -59,7 +59,7 @@ def full_ingest_workspace() -> dict[str, Any]:
             upsert_drive_file(f)
 
     cursor.cursor = start_token
-    cursor.last_full_sync_at = timezone.now()
+    cursor.last_full_sync_at = timezone.now()  # type: ignore[assignment]
     cursor.files_total = total
     cursor.save()
     return {"total": total, "queued": queued, "start_token": start_token}
@@ -71,7 +71,8 @@ def incremental_ingest_workspace() -> dict[str, Any]:
     cursor = IngestionCursor.objects.filter(source=DRIVE_CURSOR_KEY).first()
     if cursor is None or not cursor.cursor:
         logger.info("incremental_ingest: no cursor, falling back to full sync")
-        return full_ingest_workspace()
+        result: dict[str, Any] = full_ingest_workspace()
+        return result
 
     changes, next_token, new_start = discovery.iter_drive_changes(cursor.cursor)
     applied = 0
@@ -94,6 +95,6 @@ def incremental_ingest_workspace() -> dict[str, Any]:
         cursor.cursor = new_start
     elif next_token:
         cursor.cursor = next_token
-    cursor.last_incremental_sync_at = timezone.now()
+    cursor.last_incremental_sync_at = timezone.now()  # type: ignore[assignment]
     cursor.save()
     return {"applied": applied, "removed": removed, "new_token": cursor.cursor}

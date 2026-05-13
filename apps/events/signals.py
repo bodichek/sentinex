@@ -19,5 +19,5 @@ def provision_topics_for_tenant(sender: type, instance: Tenant, created: bool, *
         return
     try:
         ensure_topics(str(instance.pk))
-    except Exception:  # noqa: BLE001
+    except Exception:
         logger.exception("failed to provision Kafka topics for tenant %s", instance.pk)

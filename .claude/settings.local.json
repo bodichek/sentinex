@@ -74,7 +74,32 @@
       "Bash(poetry show *)",
       "Bash(dig +short TXT scaleupboard.com)",
       "Bash(dig +short TXT _dmarc.scaleupboard.com)",
-      "Bash(dig +short TXT google._domainkey.scaleupboard.com)"
+      "Bash(dig +short TXT google._domainkey.scaleupboard.com)",
+      "WebFetch(domain:fapi.cz)",
+      "WebFetch(domain:www.merk.cz)",
+      "WebFetch(domain:api.fapi.cz)",
+      "WebFetch(domain:merk.cz)",
+      "WebFetch(domain:faktury.fapi.cz)",
+      "WebFetch(domain:api.merk.cz)",
+      "Bash(sed -n '40,75p' apps/connectors/fapi/client.py)",
+      "Bash(sed -n '40,70p' apps/connectors/slack/client.py)",
+      "Bash(claude mcp *)",
+      "Bash(uvx --version)",
+      "Bash(curl -LsSf https://astral.sh/uv/install.sh)",
+      "Bash(sh)",
+      "Bash(export PATH=\"$HOME/.local/bin:$PATH\")",
+      "Bash(claude plugin *)",
+      "Bash(/home/bodichek/.npm-global/bin/claude plugin *)",
+      "Bash(/home/bodichek/.npm-global/bin/claude mcp *)",
+      "Bash(timeout 30 /home/bodichek/.local/bin/uvx serena-mcp-server --help)",
+      "Bash(/home/bodichek/.local/bin/uvx --from git+https://github.com/oraios/serena serena-mcp-server --help)",
+      "Bash(gh run *)",
+      "Read(//usr/bin/**)",
+      "Bash(apt list *)",
+      "WebFetch(domain:github.com)",
+      "Bash(git stash *)",
+      "Bash(git checkout *)",
+      "Bash(grep -oE \"\\\\[[a-z-]+\\\\]$\")"
     ]
   }
 }

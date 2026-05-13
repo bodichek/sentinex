@@ -59,7 +59,8 @@ class SmartEmailingClient:
     def _get(self, path: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
         resp = self._client.get(path, params=params or {})
         resp.raise_for_status()
-        return resp.json()
+        data: dict[str, Any] = resp.json()
+        return data
 
     # -- endpoints ----------------------------------------------------------
 

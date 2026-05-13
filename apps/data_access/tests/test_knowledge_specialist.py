@@ -13,9 +13,9 @@ from apps.data_access.insight_functions.knowledge import KnowledgeAnswerContext
 
 @pytest.fixture
 def fake_llm_response():  # type: ignore[no-untyped-def]
-    from apps.agents.llm_gateway import LLMResponse
-
     from decimal import Decimal
+
+    from apps.agents.llm_gateway import LLMResponse
 
     return LLMResponse(
         content="Stručná odpověď s citací [1].",

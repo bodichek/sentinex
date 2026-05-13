@@ -13,6 +13,7 @@ from typing import Any
 
 from celery import shared_task
 
+from apps.connectors._framework.base_sync import BaseSync
 from apps.connectors._framework.models import SyncMode
 from apps.connectors.pipedrive.ingest import (
     PipedriveActivitySync,
@@ -33,7 +34,9 @@ def _resolve_integration(integration_id: int | None) -> Integration | None:
     return Integration.objects.filter(provider=PROVIDER, is_active=True).first()
 
 
-def _run(sync_cls: type, integration_id: int | None, mode: str) -> dict[str, Any]:
+def _run(
+    sync_cls: type[BaseSync], integration_id: int | None, mode: str
+) -> dict[str, Any]:
     integration = _resolve_integration(integration_id)
     if integration is None:
         logger.warning("pipedrive integration not found (id=%s)", integration_id)

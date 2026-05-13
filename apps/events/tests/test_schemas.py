@@ -27,7 +27,9 @@ def test_agent_event_validates_run_lifecycle_types() -> None:
 
 
 def test_agent_event_rejects_unknown_event_type() -> None:
-    with pytest.raises(Exception):
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError):
         AgentRunEvent(
             tenant_id="t1",
             agent_type="research",

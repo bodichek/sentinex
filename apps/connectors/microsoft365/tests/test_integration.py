@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
-import pytest
 from django.test import override_settings
 
 from apps.connectors.microsoft365 import oauth

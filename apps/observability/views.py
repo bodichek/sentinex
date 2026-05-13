@@ -21,7 +21,7 @@ class TracesView(APIView):
 
     def get(self, request: Request) -> Response:
         client = get_client()
-        sdk = client._get_sdk()  # noqa: SLF001
+        sdk = client._get_sdk()
         if sdk is None:
             return Response({"results": [], "detail": "langfuse_disabled"})
 
@@ -38,7 +38,7 @@ class TracesView(APIView):
 
         try:
             traces = sdk.fetch_traces(**params)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
         items = []

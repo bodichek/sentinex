@@ -116,7 +116,7 @@ def ingest_document(document: WorkspaceDocument, file_meta: dict[str, Any]) -> s
     document.text_content = result.text[:1_000_000]  # safety cap on raw column
     document.text_truncated = result.truncated
     document.status = WorkspaceDocument.STATUS_EXTRACTED
-    document.extracted_at = timezone.now()
+    document.extracted_at = timezone.now()  # type: ignore[assignment]
     extra_meta = dict(document.metadata or {})
     extra_meta.update(result.metadata)
     document.metadata = extra_meta
@@ -157,7 +157,7 @@ def ingest_document(document: WorkspaceDocument, file_meta: dict[str, Any]) -> s
         _delete_chunks(document.pk)
         _insert_chunks(document.pk, rows)
         document.status = WorkspaceDocument.STATUS_INDEXED
-        document.indexed_at = timezone.now()
+        document.indexed_at = timezone.now()  # type: ignore[assignment]
         document.error = ""
         document.save(update_fields=["status", "indexed_at", "error", "updated_at"])
     return document.status

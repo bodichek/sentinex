@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Any
 
 from django.utils import timezone
@@ -22,7 +22,7 @@ def _summarise_tasks(tasks: list[dict[str, Any]]) -> dict[str, Any]:
         due = t.get("due_on")
         if due and not t.get("completed"):
             try:
-                due_d = timezone.datetime.fromisoformat(due).date()
+                due_d = datetime.fromisoformat(due).date()
                 if due_d < today:
                     overdue += 1
             except Exception:

@@ -94,7 +94,7 @@ def get_credentials(subject: str | None = None, scopes: list[str] | None = None)
         raise RuntimeError("subject email required (no GOOGLE_WORKSPACE_ADMIN_EMAIL set)")
     _validate_subject_domain(subject)
     scopes = scopes or list(settings.GOOGLE_WORKSPACE_DWD_SCOPES)
-    creds = service_account.Credentials.from_service_account_info(info, scopes=scopes)
+    creds = service_account.Credentials.from_service_account_info(info, scopes=scopes)  # type: ignore[no-untyped-call]
     return creds.with_subject(subject)
 
 

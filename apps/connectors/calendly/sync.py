@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from collections import Counter
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Any
 
 from django.utils import timezone
@@ -24,7 +24,7 @@ def _summarise_events(events: list[dict[str, Any]]) -> dict[str, Any]:
         start = e.get("start_time")
         if start:
             try:
-                start_dt = timezone.datetime.fromisoformat(start.replace("Z", "+00:00"))
+                start_dt = datetime.fromisoformat(start.replace("Z", "+00:00"))
                 if start_dt > now:
                     upcoming += 1
             except Exception:

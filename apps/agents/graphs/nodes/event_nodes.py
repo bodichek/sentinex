@@ -29,7 +29,7 @@ async def _publish(state: AgentState, event_type: str) -> None:
                 "run_id": run_id,
             },
         )
-    except Exception:  # noqa: BLE001
+    except Exception:
         logger.exception("failed to publish %s", event_type)
 
 

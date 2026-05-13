@@ -34,7 +34,7 @@ def _fake_embedding_payload(texts: list[str]) -> Any:
         pass
 
     items = []
-    for i, t in enumerate(texts):
+    for i, _t in enumerate(texts):
         # Deterministic vector: position i has 1.0, rest 0.0 → orthogonal across texts.
         vec = [0.0] * 1536
         vec[i % 1536] = 1.0

@@ -8,7 +8,6 @@ from uuid import UUID
 from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from apps.agents import context_builder, orchestrator

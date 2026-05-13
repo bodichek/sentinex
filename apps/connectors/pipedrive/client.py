@@ -80,7 +80,8 @@ class PipedriveClient:
             self._refresh()
             resp = self._client.get(f"/v1{path}", headers=self._auth_headers(), params=params)
         resp.raise_for_status()
-        return resp.json()
+        data: dict[str, Any] = resp.json()
+        return data
 
     # -- endpoints ----------------------------------------------------------
 

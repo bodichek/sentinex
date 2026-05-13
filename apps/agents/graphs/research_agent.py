@@ -36,9 +36,10 @@ async def retrieve_context_node(state: AgentState) -> AgentState:
 
 async def generate_response_node(state: AgentState) -> AgentState:
     """Call Claude with the current message history and any retrieved context."""
-    model = ChatAnthropic(
+    api_key_setting: Any = getattr(settings, "ANTHROPIC_API_KEY", None)
+    model = ChatAnthropic(  # type: ignore[call-arg]
         model=getattr(settings, "ANTHROPIC_RESEARCH_MODEL", "claude-haiku-4-5"),
-        api_key=getattr(settings, "ANTHROPIC_API_KEY", None),
+        api_key=api_key_setting,
         temperature=0.2,
     )
 

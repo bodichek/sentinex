@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from config.settings.base import *  # noqa: F401,F403
+from config.settings.base import *
 
 # ---------------------------------------------------------------------------
 # Core
@@ -28,8 +28,10 @@ X_FRAME_OPTIONS = "DENY"
 # ---------------------------------------------------------------------------
 # Static / media
 # ---------------------------------------------------------------------------
-STATIC_ROOT = "/app/staticfiles"
-MEDIA_ROOT = "/app/media"
+from pathlib import Path  # noqa: E402
+
+STATIC_ROOT = Path("/app/staticfiles")
+MEDIA_ROOT = Path("/app/media")
 
 # ---------------------------------------------------------------------------
 # Logging — JSON to stdout, level INFO

@@ -24,6 +24,7 @@ from apps.connectors.slack.models import (
     ScbSlackMessage,
     ScbSlackWorkspace,
 )
+from apps.data_access.models import Integration
 from apps.identity.models import (
     IdentityType,
     PersonIdentity,
@@ -42,7 +43,7 @@ def _ts_to_dt(ts: str) -> datetime | None:
         return None
 
 
-def _ensure_workspace(integration) -> ScbSlackWorkspace:
+def _ensure_workspace(integration: Integration) -> ScbSlackWorkspace:
     with SlackClient(integration) as client:
         team = client.team_info()
     ws, _ = ScbSlackWorkspace.objects.update_or_create(

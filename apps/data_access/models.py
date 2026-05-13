@@ -10,7 +10,6 @@ from cryptography.fernet import Fernet, InvalidToken
 from django.conf import settings
 from django.db import models
 
-
 _INSECURE_DEFAULT_KEY = "insecure-dev-cryptography-key-change"
 _MIN_KEY_LENGTH = 32
 

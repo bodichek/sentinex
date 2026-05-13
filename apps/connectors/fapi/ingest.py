@@ -6,7 +6,7 @@ Coexists with apps/connectors/fapi/sync.py (metric snapshots → DataSnapshot).
 from __future__ import annotations
 
 import logging
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Any
@@ -46,7 +46,9 @@ def _parse_date(value: Any) -> date | None:
     return parse_date(str(value))
 
 
-def _iter_paginated(call, page_size: int = 100) -> Iterator[dict[str, Any]]:
+def _iter_paginated(
+    call: Callable[..., Any], page_size: int = 100
+) -> Iterator[dict[str, Any]]:
     """FAPI returns {data: [...], total: N} (typical convention); fall through
     to a list directly if returned as such."""
     offset = 0

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 import environ
 
@@ -432,7 +433,7 @@ if SENTRY_DSN:
         from sentry_sdk.integrations.celery import CeleryIntegration
         from sentry_sdk.integrations.django import DjangoIntegration
 
-        def _before_send(event: dict, hint: dict) -> dict:
+        def _before_send(event: Any, hint: Any) -> Any:
             try:
                 from django.db import connection
 

@@ -11,9 +11,9 @@ import hashlib
 import json
 import logging
 import time
-from decimal import Decimal as _Decimal
 from dataclasses import dataclass, field
 from decimal import Decimal
+from decimal import Decimal as _Decimal
 from typing import Any, Literal
 
 import anthropic
@@ -279,7 +279,7 @@ def complete_with_tools(
 
     started = time.monotonic()
     iterations = 0
-    for iterations in range(1, max_iterations + 1):
+    for iterations in range(1, max_iterations + 1):  # noqa: B007 — used after loop
         kwargs: dict[str, Any] = {
             "model": resolved,
             "max_tokens": max_tokens,

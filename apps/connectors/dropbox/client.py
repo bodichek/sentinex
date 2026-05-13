@@ -37,10 +37,12 @@ async def _async_call_tool(
     from mcp.client.streamable_http import streamablehttp_client  # type: ignore[import-not-found]
 
     headers = {"Authorization": f"Bearer {access_token}"}
-    async with streamablehttp_client(DROPBOX_MCP_URL, headers=headers) as (read, write, _):
-        async with ClientSession(read, write) as session:
-            await session.initialize()
-            response = await session.call_tool(tool, arguments=arguments or {})
+    async with (
+        streamablehttp_client(DROPBOX_MCP_URL, headers=headers) as (read, write, _),
+        ClientSession(read, write) as session,
+    ):
+        await session.initialize()
+        response = await session.call_tool(tool, arguments=arguments or {})
 
     text_blocks: list[str] = []
     structured: list[Any] = []
@@ -62,10 +64,12 @@ async def _async_list_tools(access_token: str) -> list[dict[str, Any]]:
     from mcp.client.streamable_http import streamablehttp_client  # type: ignore[import-not-found]
 
     headers = {"Authorization": f"Bearer {access_token}"}
-    async with streamablehttp_client(DROPBOX_MCP_URL, headers=headers) as (read, write, _):
-        async with ClientSession(read, write) as session:
-            await session.initialize()
-            tools = await session.list_tools()
+    async with (
+        streamablehttp_client(DROPBOX_MCP_URL, headers=headers) as (read, write, _),
+        ClientSession(read, write) as session,
+    ):
+        await session.initialize()
+        tools = await session.list_tools()
     return [
         {
             "name": getattr(t, "name", ""),
@@ -85,8 +89,10 @@ def _run(coro: Any) -> Any:
 
 
 def call_tool(access_token: str, tool: str, arguments: dict[str, Any] | None = None) -> ToolResult:
-    return _run(_async_call_tool(access_token, tool, arguments))
+    result: ToolResult = _run(_async_call_tool(access_token, tool, arguments))
+    return result
 
 
 def list_tools(access_token: str) -> list[dict[str, Any]]:
-    return _run(_async_list_tools(access_token))
+    result: list[dict[str, Any]] = _run(_async_list_tools(access_token))
+    return result

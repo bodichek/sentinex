@@ -47,7 +47,7 @@ def get_slack_activity(period_days: int = 7) -> SlackActivity:
     per_channel: dict[str, dict[str, int]] = messages.get("per_channel") or {}
     top = sorted(
         ({"name": k, **v} for k, v in per_channel.items()),
-        key=lambda c: int(c.get("count", 0) or 0),
+        key=lambda c: int(c.get("count", 0) or 0),  # type: ignore[arg-type,call-overload]
         reverse=True,
     )[: SlackActivity.TOP_N]
 

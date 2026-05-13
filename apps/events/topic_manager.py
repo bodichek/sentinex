@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import logging
 import re
 from typing import TYPE_CHECKING
@@ -75,10 +76,8 @@ def ensure_topics(
 
     admin = _admin_client()
     try:
-        try:
+        with contextlib.suppress(TopicAlreadyExistsError):
             admin.create_topics(new_topics=new_topics, validate_only=False)
-        except TopicAlreadyExistsError:
-            pass
     finally:
         admin.close()
     return desired

@@ -31,9 +31,9 @@ class TenantNeo4jClient:
         password: str | None = None,
         isolation: str | None = None,
     ) -> None:
-        self.uri = uri or getattr(settings, "NEO4J_URI", "bolt://localhost:7687")
-        self.user = user or getattr(settings, "NEO4J_USER", "neo4j")
-        self.password = password or getattr(settings, "NEO4J_PASSWORD", "")
+        self.uri: str = uri or str(getattr(settings, "NEO4J_URI", "bolt://localhost:7687"))
+        self.user: str = user or str(getattr(settings, "NEO4J_USER", "neo4j"))
+        self.password: str = password or str(getattr(settings, "NEO4J_PASSWORD", ""))
         self.isolation = isolation or getattr(
             settings, "NEO4J_TENANT_ISOLATION", "prefix"
         )
