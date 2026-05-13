@@ -41,6 +41,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 SHARED_APPS = [
     "django_tenants",
     "apps.core",
+    "apps.identity",
     "django.contrib.contenttypes",
     "django.contrib.auth",
     "django.contrib.admin",

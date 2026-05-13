@@ -1,6 +1,6 @@
 # Sentinex — databázová struktura
 
-> **Verze:** 1.0 — květen 2026
+> **Verze:** 1.1 — květen 2026 (rozhodnutí potvrzena)
 > **Účel:** Návrh DB struktury pro propojení dat z BR (coaching) + FAPI + Pipedrive + Slack + Trello + dalších systémů přes jednoho klienta.
 > **Status:** návrh k odsouhlasení, otevřené otázky na konci.
 
@@ -210,15 +210,41 @@ Použití: "ukaž celou síť kolem klienta Novák" — vrátí všechny entity 
 
 ---
 
-## 7. Otevřené otázky k rozhodnutí
+## 7. Rozhodnutí (potvrzená)
 
-| # | Otázka | Varianty | Doporučení |
-| --- | --- | --- | --- |
-| 1 | Tenant = klientská firma, nebo SCB = jeden tenant? | A) SaaS multi-tenant. B) SCB = jeden velký tenant + per-klient schema jen pro klientská připojení | **B** — jednodušší |
-| 2 | Skutečně potřebujeme Úroveň 2 (per-klient schema)? | A) Hned. B) Až klienti připojí vlastní účty. C) Vůbec | **B** — odložit |
-| 3 | Provenance: per-tabulka nebo samostatná? | A) Per-tabulka. B) Samostatná. C) Hybrid | **A** + samostatná pro AI-derived |
-| 4 | JSONB raw_payload ukládat? | A) Ano s retention. B) Jen strukturovaná data | **A** s retention 90 dní |
-| 5 | BR data — sdílené nebo per-tenant? | A) Sdílené (SCB má vše). B) Per-tenant | **A** — sdílené |
+| # | Otázka | Rozhodnutí |
+| --- | --- | --- |
+| 1 | Tenant model | **Každý klient = vlastní schema.** Hard isolation mezi klienty. |
+| 2 | Per-klient schema | **Ano, hned.** Nejen pro klientovy připojené účty, ale i pro BR/coaching data. |
+| 3 | Provenance | **Per-tabulka fields** (`source_synced_at`, `source_id`, `raw_payload`). |
+| 4 | raw_payload JSONB | **Ano**, retention 90 dní. |
+| 5 | BR data umístění | **Per-tenant schema.** Důvěrnost 1:1, GDPR drop-schema, klient se přihlašuje a vidí jen své. |
+
+## 7.1 Důsledky a vzorce dotazování
+
+**SCB zaměstnanec přistupuje napříč klienty třemi vzorci:**
+
+**(a) "Otevři klienta X" — nejčastější**
+```python
+tenant = Tenant.objects.get(organization_id=X)
+with schema_context(tenant.schema_name):
+    sessions = CoachingSession.objects.filter(person_id=...)
+```
+Django-tenants natively přepne schema per request. SCB role má povoleno přepínat, klient ne.
+
+**(b) Cross-client reporting**
+- Pomalá cesta: loop přes všechny tenanty, `with schema_context(...)`.
+- Rychlá cesta: **read-only mirror tabulky v public schema** (`scb_client_summary`, `scb_session_index`) — Celery beat job sype agregace každých 15 min. Reporting běží proti public, ne proti N schématům.
+
+**(c) Hluboký AI dotaz napříč klienty**
+Vzácné, většinou nepotřebné (GDPR). Insight function s explicitním scope `tenants=[A, B, C]`, jen pro Senior kouče/Admin, audit log povinný.
+
+## 7.2 Hybrid pro coaching reporting (později)
+
+- 1:1 obsah (přepisy, AI shrnutí, finance) → **per-tenant** (citlivé).
+- 1:1 metadata (datum, kouč, stav, délka) → **sdílený mirror** `scb_session_index` (signalem při uložení).
+- Reporting základní vrstva běží proti public, detail otevíráš v tenant schema.
+- Implementuje se až bude potřeba — zatím připravit hook v signals.
 
 ---
 
