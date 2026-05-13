@@ -28,7 +28,7 @@ from django.utils import timezone
 
 from apps.connectors._framework.models import SyncMode, SyncRun, SyncStatus
 from apps.connectors._framework.rate_limit import TokenBucket
-from apps.data_access.models import Integration, IngestionCursor
+from apps.data_access.models import IngestionCursor, Integration
 
 logger = logging.getLogger(__name__)
 
@@ -135,7 +135,7 @@ class BaseSync(ABC):
                     if self.rate_limit is not None:
                         self.rate_limit.acquire(1)
                     self._persist_one(raw, ctx)
-            except Exception as exc:  # noqa: BLE001 — fatal failures are logged
+            except Exception as exc:
                 logger.exception("sync %s.%s failed", self.provider, self.resource)
                 run.status = SyncStatus.FAILED
                 run.error_message = f"{type(exc).__name__}: {exc}"[:1000]
@@ -167,7 +167,7 @@ class BaseSync(ABC):
                 ctx.updated += 1
             elif outcome == "skipped":
                 ctx.skipped += 1
-        except Exception as exc:  # noqa: BLE001 — per-row errors don't kill the run
+        except Exception as exc:
             ctx.record_error(exc)
             logger.warning("sync %s.%s row error: %s", self.provider, self.resource, exc)
 

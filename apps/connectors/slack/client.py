@@ -36,6 +36,15 @@ class SlackClient:
     def web(self) -> WebClient:
         return self._client
 
+    def __enter__(self) -> SlackClient:
+        return self
+
+    def __exit__(self, *_: Any) -> None:
+        # WebClient holds an httpx session managed by slack_sdk; nothing
+        # explicit to close here, but the context-manager interface lets
+        # ingest code use `with SlackClient(...) as client:`.
+        return None
+
     def list_joined_channels(self, limit: int = 200) -> list[dict[str, Any]]:
         result = self._client.conversations_list(
             types="public_channel,private_channel", limit=limit

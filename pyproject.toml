@@ -152,6 +152,20 @@ module = "*.migrations.*"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
+# Celery shared_task decorators erase signatures; mute on task modules.
+module = ["*.ingest_tasks", "*.tasks"]
+disallow_untyped_decorators = false
+disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+# Test files use pytest fixtures (db, factories) — don't require full
+# strict typing inside tests/*.
+module = ["*.tests.*", "tests.*"]
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+warn_return_any = false
+
+[[tool.mypy.overrides]]
 module = [
     "django_tenants.*",
     "celery.*",

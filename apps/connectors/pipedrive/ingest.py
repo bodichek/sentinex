@@ -54,8 +54,7 @@ class PipedriveOrganizationSync(BaseSync):
 
     def fetch(self, ctx: SyncContext) -> Iterator[dict[str, Any]]:
         with PipedriveClient(self.integration) as client:
-            for row in client.iter_organizations():
-                yield row
+            yield from client.iter_organizations()
 
     def persist(self, raw: dict[str, Any], ctx: SyncContext) -> str:
         pipedrive_id = int(raw["id"])
@@ -94,8 +93,7 @@ class PipedrivePersonSync(BaseSync):
 
     def fetch(self, ctx: SyncContext) -> Iterator[dict[str, Any]]:
         with PipedriveClient(self.integration) as client:
-            for row in client.iter_persons():
-                yield row
+            yield from client.iter_persons()
 
     def persist(self, raw: dict[str, Any], ctx: SyncContext) -> str:
         pipedrive_id = int(raw["id"])
@@ -181,8 +179,7 @@ class PipedriveDealSync(BaseSync):
 
     def fetch(self, ctx: SyncContext) -> Iterator[dict[str, Any]]:
         with PipedriveClient(self.integration) as client:
-            for row in client.iter_deals(since=ctx.cursor_before or None):
-                yield row
+            yield from client.iter_deals(since=ctx.cursor_before or None)
 
     def persist(self, raw: dict[str, Any], ctx: SyncContext) -> str:
         pipedrive_id = int(raw["id"])
@@ -191,17 +188,17 @@ class PipedriveDealSync(BaseSync):
 
         master_org = None
         if org_pipedrive_id:
-            mirror = ScbPipedriveOrganization.objects.filter(
+            org_mirror = ScbPipedriveOrganization.objects.filter(
                 pipedrive_id=org_pipedrive_id
             ).only("organization_id").first()
-            master_org = mirror.organization if mirror else None
+            master_org = org_mirror.organization if org_mirror else None
 
         master_person = None
         if person_pipedrive_id:
-            mirror = ScbPipedrivePerson.objects.filter(
+            person_mirror = ScbPipedrivePerson.objects.filter(
                 pipedrive_id=person_pipedrive_id
             ).only("person_id").first()
-            master_person = mirror.person if mirror else None
+            master_person = person_mirror.person if person_mirror else None
 
         status = self._map_status(raw.get("status"))
         obj, created = ScbPipedriveDeal.objects.update_or_create(
@@ -270,8 +267,7 @@ class PipedriveActivitySync(BaseSync):
 
     def fetch(self, ctx: SyncContext) -> Iterator[dict[str, Any]]:
         with PipedriveClient(self.integration) as client:
-            for row in client.iter_activities(days=60):
-                yield row
+            yield from client.iter_activities(days=60)
 
     def persist(self, raw: dict[str, Any], ctx: SyncContext) -> str:
         pipedrive_id = int(raw["id"])
@@ -284,16 +280,16 @@ class PipedriveActivitySync(BaseSync):
             deal_obj = ScbPipedriveDeal.objects.filter(pipedrive_id=int(deal_id)).first()
         master_org = None
         if org_id:
-            mirror = ScbPipedriveOrganization.objects.filter(
+            org_mirror = ScbPipedriveOrganization.objects.filter(
                 pipedrive_id=int(org_id)
             ).only("organization_id").first()
-            master_org = mirror.organization if mirror else None
+            master_org = org_mirror.organization if org_mirror else None
         master_person = None
         if person_id:
-            mirror = ScbPipedrivePerson.objects.filter(
+            person_mirror = ScbPipedrivePerson.objects.filter(
                 pipedrive_id=int(person_id)
             ).only("person_id").first()
-            master_person = mirror.person if mirror else None
+            master_person = person_mirror.person if person_mirror else None
 
         atype = self._map_type(raw.get("type"))
         obj, created = ScbPipedriveActivity.objects.update_or_create(

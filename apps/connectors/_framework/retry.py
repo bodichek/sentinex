@@ -46,7 +46,7 @@ def retry_with_backoff(
                     if attempt > retries:
                         raise
                     hint = getattr(exc, "retry_after", None)
-                    if isinstance(hint, (int, float)) and hint > 0:
+                    if isinstance(hint, int | float) and hint > 0:
                         delay = min(float(hint), max_delay)
                     else:
                         delay = min(base_delay * (2 ** (attempt - 1)), max_delay)

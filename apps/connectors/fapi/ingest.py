@@ -76,8 +76,7 @@ class FapiCustomerSync(BaseSync):
 
     def fetch(self, ctx: SyncContext) -> Iterator[dict[str, Any]]:
         with FapiClient(self.integration) as client:
-            for row in _iter_paginated(client.list_clients):
-                yield row
+            yield from _iter_paginated(client.list_clients)
 
     def persist(self, raw: dict[str, Any], ctx: SyncContext) -> str:
         fapi_id = str(raw.get("id"))
@@ -137,8 +136,7 @@ class FapiInvoiceSync(BaseSync):
 
     def fetch(self, ctx: SyncContext) -> Iterator[dict[str, Any]]:
         with FapiClient(self.integration) as client:
-            for row in _iter_paginated(client.list_invoices):
-                yield row
+            yield from _iter_paginated(client.list_invoices)
 
     def persist(self, raw: dict[str, Any], ctx: SyncContext) -> str:
         fapi_id = str(raw.get("id"))

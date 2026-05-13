@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 from django.contrib import admin
 
 from apps.identity.models import (
@@ -34,7 +36,7 @@ class PersonAdmin(admin.ModelAdmin):
     list_display = ("display_name", "primary_email", "person_type", "confidence", "created_at")
     list_filter = ("person_type",)
     search_fields = ("display_name", "first_name", "last_name", "primary_email")
-    inlines = [PersonIdentityInline, PersonOrganizationRoleInline]
+    inlines: ClassVar = [PersonIdentityInline, PersonOrganizationRoleInline]
     readonly_fields = ("created_at", "updated_at")
 
 
@@ -43,7 +45,7 @@ class OrganizationAdmin(admin.ModelAdmin):
     list_display = ("name", "org_type", "ico", "primary_domain", "tenant", "created_at")
     list_filter = ("org_type",)
     search_fields = ("name", "legal_name", "ico", "dic", "primary_domain")
-    inlines = [OrganizationIdentityInline]
+    inlines: ClassVar = [OrganizationIdentityInline]
     readonly_fields = ("created_at", "updated_at")
 
 

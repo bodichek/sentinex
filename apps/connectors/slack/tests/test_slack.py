@@ -11,11 +11,11 @@ from django.core.cache import cache
 from django.utils import timezone
 from django_tenants.utils import schema_context
 
-from apps.data_access.insight_functions.exceptions import InsufficientData
-from apps.data_access.insight_functions.slack import SlackActivity, get_slack_activity
 from apps.connectors.slack.client import SlackClient
 from apps.connectors.slack.integration import SlackIntegration
 from apps.connectors.slack.sync import SlackSyncPipeline, run_sync
+from apps.data_access.insight_functions.exceptions import InsufficientData
+from apps.data_access.insight_functions.slack import SlackActivity, get_slack_activity
 from apps.data_access.models import Credential, DataSnapshot, Integration
 
 

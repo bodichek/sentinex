@@ -69,7 +69,7 @@ def test_resolve_person_creates_new_when_unknown() -> None:
 
 @pytest.mark.django_db
 def test_resolve_person_fuzzy_via_email_domain_and_name() -> None:
-    org = Organization.objects.create(name="ACME", org_type=OrganizationType.CLIENT)
+    Organization.objects.create(name="ACME", org_type=OrganizationType.CLIENT)
     person = Person.objects.create(display_name="Jan Novák", primary_email="jan.novak@acme.cz")
     PersonIdentity.objects.create(
         person=person, identity_type=IdentityType.EMAIL, identity_value="jan.novak@acme.cz"

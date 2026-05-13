@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Iterator
-from datetime import datetime, timezone as dt_timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from django.utils import timezone
@@ -37,7 +37,7 @@ RATE_LIMIT = TokenBucket("slack", capacity=50, refill_per_sec=0.8)  # Tier 3
 
 def _ts_to_dt(ts: str) -> datetime | None:
     try:
-        return datetime.fromtimestamp(float(ts), tz=dt_timezone.utc)
+        return datetime.fromtimestamp(float(ts), tz=UTC)
     except (TypeError, ValueError):
         return None
 
@@ -65,8 +65,7 @@ class SlackUserSync(BaseSync):
 
     def fetch(self, ctx: SyncContext) -> Iterator[dict[str, Any]]:
         with SlackClient(self.integration) as client:
-            for row in client.list_users():
-                yield row
+            yield from client.list_users()
 
     def persist(self, raw: dict[str, Any], ctx: SyncContext) -> str:
         if raw.get("is_bot") or raw.get("deleted"):
@@ -104,8 +103,7 @@ class SlackChannelSync(BaseSync):
 
     def fetch(self, ctx: SyncContext) -> Iterator[dict[str, Any]]:
         with SlackClient(self.integration) as client:
-            for ch in client.list_joined_channels():
-                yield ch
+            yield from client.list_joined_channels()
 
     def persist(self, raw: dict[str, Any], ctx: SyncContext) -> str:
         workspace = _ensure_workspace(self.integration)
