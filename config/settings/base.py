@@ -55,6 +55,7 @@ SHARED_APPS = [
 ]
 
 TENANT_APPS = [
+    "apps.connectors._framework",
     "apps.agents",
     "apps.memory",
     "apps.events",
