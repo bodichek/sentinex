@@ -4,6 +4,7 @@ from config.settings.base import *
 
 DEBUG = False
 SECRET_KEY = "test-secret-key"
+CRYPTOGRAPHY_KEY = "test-cryptography-key-must-be-32-chars-or-more"
 
 PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 

@@ -112,6 +112,19 @@ class PipedriveClient:
             start = int(pagination.get("next_start") or (start + page_size))
         return out
 
+    def iter_organizations(self, page_size: int = 100) -> list[dict[str, Any]]:
+        out: list[dict[str, Any]] = []
+        start = 0
+        while True:
+            data = self._get("/organizations", {"start": start, "limit": page_size})
+            chunk = data.get("data") or []
+            out.extend(chunk)
+            pagination = (data.get("additional_data") or {}).get("pagination") or {}
+            if not pagination.get("more_items_in_collection"):
+                break
+            start = int(pagination.get("next_start") or (start + page_size))
+        return out
+
     def iter_persons(self, page_size: int = 100) -> list[dict[str, Any]]:
         out: list[dict[str, Any]] = []
         start = 0
